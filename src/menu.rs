@@ -1,5 +1,5 @@
-use crate::exercises::exercises::Exercise;
-use std::{fs, io, process::exit};
+use crate::exercises::Exercise;
+use std::{io, process::exit};
 
 pub fn start() {
     println!("Welcome, to type trainer, you can start your training by typing 'help'");
@@ -17,57 +17,10 @@ fn show_menu() {
     match input.next().unwrap() {
         "quit" => exit(0),
         "help" => print_help_message(),
-        "quicktype" => exercise_option(Exercise::Quicktype, input.next()),
-        "copy" => exercise_option(Exercise::Copy, input.next()),
+        e1 if Exercise::Copy.to_string() == e1 => Exercise::Copy.start(input.next()),
+        e2 if Exercise::Quicktype.to_string() == e2 => Exercise::Quicktype.start(input.next()),
         _ => println!("Invalid option, type 'help' to see the options"),
     }
-}
-
-fn exercise_option(exercise: Exercise, argument: Option<&str>) {
-    let files = get_files(&exercise);
-
-    if let Some(file_name) = argument {
-        if files.contains(&file_name.to_string()) {
-            // start exercise
-            exercise.start();
-        } else {
-            println!("File not found or not a valid exercise file");
-        }
-    } else {
-        println!("Exercise options:");
-        for file_name in files {
-            println!("{}", file_name);
-        }
-        println!("You can add other exercises by adding ")
-    }
-}
-
-fn get_files(exercise: &Exercise) -> Vec<String> {
-    let dir = fs::read_dir(exercise.get_path()).expect("Error: exercises folder not found");
-
-    let files = dir.filter(|entry| {
-        entry
-            .as_ref()
-            .is_ok_and(|file| file.file_type().unwrap().is_file())
-    });
-
-    let txt_files = files.filter(|file| {
-        file.as_ref()
-            .unwrap()
-            .file_name()
-            .to_str()
-            .unwrap()
-            .split_terminator(".")
-            .last()
-            .unwrap()
-            == "txt"
-    });
-
-    let file_names: Vec<String> = txt_files
-        .map(|file| file.unwrap().file_name().to_str().unwrap().to_owned())
-        .collect();
-
-    file_names
 }
 
 fn print_help_message() {
