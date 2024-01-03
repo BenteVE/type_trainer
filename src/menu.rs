@@ -1,8 +1,6 @@
-
-use crate::exercises::copy;
-use crate::exercises::quicktype;
-use crate::exercises::Exercise;
+use crate::exercises::exercises::Exercise;
 use std::{fs, io, process::exit};
+
 pub fn start() {
     println!("Welcome, to type trainer, you can start your training by typing 'help'");
     loop {
@@ -31,10 +29,7 @@ fn exercise_option(exercise: Exercise, argument: Option<&str>) {
     if let Some(file_name) = argument {
         if files.contains(&file_name.to_string()) {
             // start exercise
-            match exercise {
-                Exercise::Quicktype => quicktype::start(),
-                Exercise::Copy => copy::start(),
-            }
+            exercise.start();
         } else {
             println!("File not found or not a valid exercise file");
         }
@@ -48,11 +43,7 @@ fn exercise_option(exercise: Exercise, argument: Option<&str>) {
 }
 
 fn get_files(exercise: &Exercise) -> Vec<String> {
-    let dir = match exercise {
-        Exercise::Copy => fs::read_dir("./exercises/copy"),
-        Exercise::Quicktype => fs::read_dir("./exercises/quicktype"),
-    };
-    let dir = dir.expect("Error: exercises folder not found");
+    let dir = fs::read_dir(exercise.get_path()).expect("Error: exercises folder not found");
 
     let files = dir.filter(|entry| {
         entry
