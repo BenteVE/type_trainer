@@ -1,5 +1,10 @@
 use std::{fs, io, process::exit};
 
+enum Exercise {
+    Quicktype,
+    Copy,
+}
+
 fn main() {
     println!("Welcome, to type trainer, you can start your training by typing 'help'");
     loop {
@@ -16,45 +21,59 @@ fn menu() {
     match input.next().unwrap() {
         "quit" => exit(0),
         "help" => print_help_message(),
-        "quicktype" => {
-            let dir =
-                fs::read_dir("./exercises/quicktype").expect("Error: exercises folder not found");
-            let filter = dir.filter(|entry| {
-                entry.as_ref().is_ok_and(|file| {
-                    file.file_type().unwrap().is_file()
-                        && file
-                            .file_name()
-                            .to_str()
-                            .unwrap()
-                            .split_terminator(".")
-                            .last()
-                            .unwrap()
-                            == "txt"
-                })
-            });
-            let file_names: Vec<_> = filter
-                .map(|file| file.unwrap().file_name().to_str().unwrap().to_owned())
-                .collect();
-
-            if let Some(file_name) = input.next() {
-                if file_names.contains(&file_name.to_string()) {
-                    // start exercise
-                    println!("Starting the quicktype exercise for {}", file_name);
-                } else {
-                    println!("File not found");
-                }
-            } else {
-                println!("Quicktype exercise options:");
-                for file_name in file_names {
-                    println!("{}", file_name);
-                }
-                println!("You can add other exercises by adding ")
-            }
-        }
-
-        "copy" => {}
+        "quicktype" => exercise_option(input.next(), get_files(Exercise::Quicktype)),
+        "copy" => exercise_option(input.next(), get_files(Exercise::Copy)),
         _ => println!("Invalid option, type 'help' to see the options"),
     }
+}
+
+fn exercise_option(argument: Option<&str>, files: Vec<String>) {
+    if let Some(file_name) = argument {
+        if files.contains(&file_name.to_string()) {
+            // start exercise
+            println!("Starting the exercise for {}", file_name);
+        } else {
+            println!("File not found or not a valid exercise file");
+        }
+    } else {
+        println!("Exercise options:");
+        for file_name in files {
+            println!("{}", file_name);
+        }
+        println!("You can add other exercises by adding ")
+    }
+}
+
+fn get_files(exercise: Exercise) -> Vec<String> {
+    let dir = match exercise {
+        Exercise::Copy => fs::read_dir("./exercises/copy"),
+        Exercise::Quicktype => fs::read_dir("./exercises/quicktype"),
+    };
+    let dir = dir.expect("Error: exercises folder not found");
+
+    let files = dir.filter(|entry| {
+        entry
+            .as_ref()
+            .is_ok_and(|file| file.file_type().unwrap().is_file())
+    });
+
+    let txt_files = files.filter(|file| {
+        file.as_ref()
+            .unwrap()
+            .file_name()
+            .to_str()
+            .unwrap()
+            .split_terminator(".")
+            .last()
+            .unwrap()
+            == "txt"
+    });
+
+    let file_names: Vec<String> = txt_files
+        .map(|file| file.unwrap().file_name().to_str().unwrap().to_owned())
+        .collect();
+
+    file_names
 }
 
 fn print_help_message() {
