@@ -1,5 +1,5 @@
 // available exercises
-mod exercises{
-    mod quicktype;
-    mod copy;
+pub mod exercises{
+    pub mod quicktype;
+    pub mod copy;
 }

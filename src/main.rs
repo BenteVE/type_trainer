@@ -1,4 +1,6 @@
 use std::{fs, io, process::exit};
+use type_trainer::exercises::copy;
+use type_trainer::exercises::quicktype;
 
 enum Exercise {
     Quicktype,
@@ -21,17 +23,22 @@ fn menu() {
     match input.next().unwrap() {
         "quit" => exit(0),
         "help" => print_help_message(),
-        "quicktype" => exercise_option(input.next(), get_files(Exercise::Quicktype)),
-        "copy" => exercise_option(input.next(), get_files(Exercise::Copy)),
+        "quicktype" => exercise_option(Exercise::Quicktype, input.next()),
+        "copy" => exercise_option(Exercise::Copy, input.next()),
         _ => println!("Invalid option, type 'help' to see the options"),
     }
 }
 
-fn exercise_option(argument: Option<&str>, files: Vec<String>) {
+fn exercise_option(exercise: Exercise, argument: Option<&str>) {
+    let files = get_files(&exercise);
+
     if let Some(file_name) = argument {
         if files.contains(&file_name.to_string()) {
             // start exercise
-            println!("Starting the exercise for {}", file_name);
+            match exercise {
+                Exercise::Quicktype => quicktype::start(),
+                Exercise::Copy => copy::start(),
+            }
         } else {
             println!("File not found or not a valid exercise file");
         }
@@ -44,7 +51,7 @@ fn exercise_option(argument: Option<&str>, files: Vec<String>) {
     }
 }
 
-fn get_files(exercise: Exercise) -> Vec<String> {
+fn get_files(exercise: &Exercise) -> Vec<String> {
     let dir = match exercise {
         Exercise::Copy => fs::read_dir("./exercises/copy"),
         Exercise::Quicktype => fs::read_dir("./exercises/quicktype"),
