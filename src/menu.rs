@@ -1,17 +1,27 @@
+use console::Term;
+
 use crate::exercises::Exercise;
-use std::{io, process::exit};
+use std::{io::{self, Write}, process::exit};
 
 pub fn start() {
     println!("Welcome, to type trainer, you can start your training by typing 'help'");
+    let term = Term::stdout();
     loop {
-        show_menu();
+        show_menu(&term);
     }
 }
 
-fn show_menu() {
+fn show_menu(term: &Term) {
+    println!();
+    print!("> ");
+    io::stdout().flush().unwrap();
+
     let mut buffer = String::new();
     let stdin = io::stdin();
     stdin.read_line(&mut buffer).expect("Error reading line");
+
+    term.clear_screen().unwrap();
+    println!("> {}", buffer);
     let mut input = buffer.as_str().trim().split(" ");
 
     match input.next().unwrap() {
