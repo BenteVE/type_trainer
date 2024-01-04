@@ -7,4 +7,5 @@ edition = "2021"
 
 [dependencies]
 console = "0.15.7"
+edit-distance = "2.1.0"
 rand = "0.8.5"

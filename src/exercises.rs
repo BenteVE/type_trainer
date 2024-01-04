@@ -1,4 +1,5 @@
 use console::Term;
+use edit_distance::edit_distance;
 use rand::{seq::SliceRandom, thread_rng};
 use std::{fmt, fs, io, time::SystemTime};
 
@@ -28,6 +29,8 @@ impl Exercise {
                 let mut buffer = String::new();
                 let stdin = io::stdin();
 
+                let term = Term::stdout();
+
                 match self {
                     Exercise::Quicktype => {
                         // quicktype: choose a random word to let the user type
@@ -40,7 +43,6 @@ impl Exercise {
                             // show the user a word
                             let word = words.choose(&mut rng).unwrap();
 
-                            let term = Term::stdout();
                             term.clear_screen().unwrap();
                             term.write_line(word).unwrap();
 
@@ -59,8 +61,40 @@ impl Exercise {
                     }
                     Exercise::Copy => {
                         // copy: put all lines in an iterator and let the user type them in order
+                        let mut mistakes = 0;
+
+                        let mut originals = Vec::new();
+                        let mut faults = Vec::new();
+
                         for line in contents.lines() {
-                            println!("{}", line);
+                            term.clear_screen().unwrap();
+                            term.write_line(line).unwrap();
+
+                            // read the line from the user
+                            buffer.clear();
+                            stdin.read_line(&mut buffer).expect("Error reading line");
+
+                            let edit_distance = edit_distance(&buffer.trim_end(), line.trim_end());
+
+                            mistakes += edit_distance;
+
+                            if edit_distance != 0 {
+                                faults.push(buffer.clone());
+                                originals.push(line);
+                            }
+                        }
+
+                        term.clear_screen().unwrap();
+                        println!(
+                            "You copied the text in {} seconds with {} mistake(s)",
+                            start.elapsed().unwrap().as_secs(),
+                            mistakes
+                        );
+
+                        for i in 0..originals.len() {
+                            println!("{}", originals[i].trim_end());
+                            println!("{}", faults[i].trim_end());
+                            println!("");
                         }
                     }
                 }
