@@ -1,4 +1,6 @@
-use std::{fmt, fs};
+use console::Term;
+use rand::{seq::SliceRandom, thread_rng};
+use std::{fmt, fs, io, time::SystemTime};
 
 pub enum Exercise {
     Quicktype,
@@ -11,9 +13,56 @@ impl Exercise {
 
         if let Some(file_name) = argument {
             if files.contains(&file_name.to_string()) {
+                // read in the correct file
+                let contents = fs::read_to_string(self.get_path() + "/" + file_name)
+                    .expect("Should have been able to read the file");
+                if contents.is_empty() {
+                    println!("The file {} is empty", file_name);
+                    return;
+                }
+
+                // start a timer
+                let start = SystemTime::now();
+
+                // read the input from the user
+                let mut buffer = String::new();
+                let stdin = io::stdin();
+
                 match self {
-                    Exercise::Quicktype => println!("starting the quicktype exercise"),
-                    Exercise::Copy => println!("starting the copy exercise"),
+                    Exercise::Quicktype => {
+                        // quicktype: choose a random word to let the user type
+                        let words: Vec<&str> = contents.split([' ', '\n']).collect();
+                        let mut rng = thread_rng();
+
+                        let mut correct_answers = 0;
+                        // the exercise will last for 3 minutes
+                        while start.elapsed().unwrap().as_secs() < 20 {
+                            // show the user a word
+                            let word = words.choose(&mut rng).unwrap();
+
+                            let term = Term::stdout();
+                            term.clear_screen().unwrap();
+                            term.write_line(word).unwrap();
+
+                            // read the line from the user
+                            buffer.clear();
+                            stdin.read_line(&mut buffer).expect("Error reading line");
+
+                            if word == &buffer.trim_end() {
+                                correct_answers += 1;
+                            }
+                        }
+                        println!(
+                            "You typed {} correct answers in 20 seconds",
+                            correct_answers
+                        );
+                    }
+                    Exercise::Copy => {
+                        // copy: put all lines in an iterator and let the user type them in order
+                        for line in contents.lines() {
+                            println!("{}", line);
+                        }
+                    }
                 }
             } else {
                 println!("File not found or not a valid exercise file");
@@ -30,7 +79,7 @@ impl Exercise {
     fn get_path(&self) -> String {
         String::from("./exercises/") + &self.to_string()
     }
-    
+
     fn get_files(&self) -> Vec<String> {
         let dir = fs::read_dir(self.get_path()).expect("Error: exercises folder not found");
 
