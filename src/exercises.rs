@@ -1,157 +1,143 @@
 use console::Term;
 use edit_distance::edit_distance;
 use rand::{seq::SliceRandom, thread_rng};
-use std::{fmt, fs, io, time::SystemTime};
+use std::{fmt, io, time::SystemTime};
 
-pub enum Exercise {
+use crate::file_handler;
+
+//  change this to the type of exercise
+#[derive(PartialEq)]
+pub enum ExerciseType {
     Quicktype,
     Copy,
 }
 
-impl Exercise {
-    pub fn start(&self, argument: Option<&str>) {
-        let files = self.get_files();
+impl ExerciseType {
+    // read in the file, and create the contents based on the exercise type
+    fn build_contents_from_file(&self, file_name: String) -> Vec<String> {
+        // call the file handler to read in all the lines
+        let contents = file_handler::get_file_content(file_name);
 
-        if let Some(file_name) = argument {
-            if files.contains(&file_name.to_string()) {
-                // read in the correct file
-                let contents = fs::read_to_string(self.get_path() + "/" + file_name)
-                    .expect("Should have been able to read the file");
-                if contents.is_empty() {
-                    println!("The file {} is empty", file_name);
-                    return;
-                }
-
-                // start a timer
-                let start = SystemTime::now();
-
-                // read the input from the user
-                let mut buffer = String::new();
-                let stdin = io::stdin();
-
-                let term = Term::stdout();
-
-                match self {
-                    Exercise::Quicktype => {
-                        // quicktype: choose a random word to let the user type
-                        let words: Vec<&str> = contents.split([' ', '\n']).collect();
-                        let mut rng = thread_rng();
-
-                        let mut correct_answers = 0;
-                        // the exercise will last for 3 minutes
-                        while start.elapsed().unwrap().as_secs() < 20 {
-                            // show the user a word
-                            let word = words.choose(&mut rng).unwrap();
-
-                            term.clear_screen().unwrap();
-                            term.write_line(word).unwrap();
-
-                            // read the line from the user
-                            buffer.clear();
-                            stdin.read_line(&mut buffer).expect("Error reading line");
-
-                            if word == &buffer.trim_end() {
-                                correct_answers += 1;
-                            }
-                        }
-                        println!(
-                            "You typed {} correct answers in 20 seconds",
-                            correct_answers
-                        );
-                    }
-                    Exercise::Copy => {
-                        // copy: put all lines in an iterator and let the user type them in order
-                        let mut mistakes = 0;
-
-                        let mut originals = Vec::new();
-                        let mut faults = Vec::new();
-
-                        for line in contents.lines() {
-                            term.clear_screen().unwrap();
-                            term.write_line(line).unwrap();
-
-                            // read the line from the user
-                            buffer.clear();
-                            stdin.read_line(&mut buffer).expect("Error reading line");
-
-                            let edit_distance = edit_distance(&buffer.trim_end(), line.trim_end());
-
-                            mistakes += edit_distance;
-
-                            if edit_distance != 0 {
-                                faults.push(buffer.clone());
-                                originals.push(line);
-                            }
-                        }
-
-                        term.clear_screen().unwrap();
-                        println!(
-                            "You copied the text in {} seconds with {} mistake(s)",
-                            start.elapsed().unwrap().as_secs(),
-                            mistakes
-                        );
-
-                        for i in 0..originals.len() {
-                            println!("{}", originals[i].trim_end());
-                            println!("{}", faults[i].trim_end());
-                            println!("");
-                        }
-                    }
-                }
-            } else {
-                println!("File not found or not a valid exercise file");
-            }
-        } else {
-            println!("Exercise options:");
-            for file_name in files {
-                println!("{}", file_name);
-            }
-            println!("You can add other exercises by adding ")
+        match self {
+            ExerciseType::Quicktype => contents
+                .split([' ', '\n'])
+                .map(|s| s.to_owned())
+                .collect::<Vec<String>>(),
+            ExerciseType::Copy => contents
+                .split('\n')
+                .map(|s| s.to_owned())
+                .collect::<Vec<String>>(),
         }
-    }
-
-    fn get_path(&self) -> String {
-        String::from("./exercises/") + &self.to_string()
-    }
-
-    fn get_files(&self) -> Vec<String> {
-        let dir = fs::read_dir(self.get_path()).expect("Error: exercises folder not found");
-
-        // filter the files from the directory
-        let files = dir.filter(|entry| {
-            entry
-                .as_ref()
-                .is_ok_and(|file| file.file_type().unwrap().is_file())
-        });
-
-        // filter the txt files from the directory
-        let txt_files = files.filter(|file| {
-            file.as_ref()
-                .unwrap()
-                .file_name()
-                .to_str()
-                .unwrap()
-                .split_terminator(".")
-                .last()
-                .unwrap()
-                == "txt"
-        });
-
-        // collect the file names
-        let file_names: Vec<String> = txt_files
-            .map(|file| file.unwrap().file_name().to_str().unwrap().to_owned())
-            .collect();
-
-        file_names
     }
 }
 
 // makes the to_string() method available for the variants
-impl fmt::Display for Exercise {
+impl fmt::Display for ExerciseType {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            Exercise::Quicktype => write!(f, "quicktype"),
-            Exercise::Copy => write!(f, "copy"),
+            ExerciseType::Quicktype => write!(f, "quicktype"),
+            ExerciseType::Copy => write!(f, "copy"),
         }
+    }
+}
+
+pub struct Exercise {
+    exercise_type: ExerciseType,
+    start: Option<SystemTime>,
+    duration: Option<usize>, // in seconds
+    contents: Vec<String>,
+    prompts: usize,
+    correct: usize,
+    mistakes: usize,
+    lines_with_mistakes: Vec<(String, String)>,
+}
+
+impl Exercise {
+    pub fn build_exercise(
+        exercise_type: ExerciseType,
+        duration: Option<usize>,
+        file_name: String,
+    ) -> Exercise {
+        Exercise {
+            contents: exercise_type.build_contents_from_file(file_name),
+            exercise_type: exercise_type,
+            start: Option::None,
+            duration: duration,
+            prompts: 0, // count the total prompts given (used for giving the correct next line in the copy exercise)
+            correct: 0, // count the lines without mistakes
+            mistakes: 0, // calculated with edit distance
+            lines_with_mistakes: Vec::new(), // store a list of tuples with original to typed with mistake
+        }
+    }
+
+    // start the exercise (loop giving are reading prompts and answers while the timer had not reached the end)
+    pub fn start(&mut self) {
+        if self.contents.is_empty() {
+            println!("There are no contents in the file.");
+        }
+        // start the exercise timer
+        self.start = Some(SystemTime::now());
+        loop {
+            if self.duration.is_some_and(|d| self.elapsed_time() >= d) {
+                break;
+            }
+            if self.exercise_type == ExerciseType::Copy && self.prompts >= self.contents.len() {
+                break;
+            }
+            // Note: when the timer runs out, it will not immediately stop the exercise
+            // but allow you to finish the current prompt
+            self.handle_prompt()
+        }
+        self.save_results();
+        self.format_results();
+    }
+
+    fn handle_prompt(&mut self) {
+        // clear the screen
+        let term = Term::stdout();
+        term.clear_screen().unwrap();
+
+        // print prompt
+        let prompt = match self.exercise_type {
+            ExerciseType::Quicktype => self.contents.choose(&mut thread_rng()).unwrap(),
+            ExerciseType::Copy => &self.contents[self.prompts],
+        };
+        term.write_line(prompt).unwrap();
+        self.prompts += 1;
+
+        // read the input from the user
+        let mut buffer = String::new();
+        let stdin = io::stdin();
+        stdin.read_line(&mut buffer).expect("Error reading line");
+
+        // compare prompt and result and count mistakes
+        match edit_distance(prompt.trim_end(), &buffer.trim_end()) {
+            0 => self.correct += 1,
+            edit_distance => {
+                self.mistakes += edit_distance;
+                self.lines_with_mistakes
+                    .push((prompt.clone(), buffer.clone()));
+            }
+        }
+    }
+
+    // save the results to a file
+    fn save_results(&self) {}
+
+    fn format_results(&self) {
+        Term::stdout().clear_screen().unwrap();
+        println!("Time: {}", self.elapsed_time());
+        println!("Prompts: {}", self.prompts);
+        println!("Correct: {}", self.correct);
+        println!("Mistakes: {}", self.mistakes);
+
+        for (orig, fault) in &self.lines_with_mistakes{
+            println!("{}", orig.trim_end());
+            println!("{}", fault.trim_end());
+        }
+    }
+
+    fn elapsed_time(&self) -> usize {
+        self.start.unwrap().elapsed().unwrap().as_secs() as usize
     }
 }

@@ -1,7 +1,15 @@
 use console::Term;
 
-use crate::exercises::Exercise;
-use std::{io::{self, Write}, process::exit};
+use crate::{
+    exercises::{Exercise, ExerciseType},
+    file_handler,
+};
+use std::{
+    io::{self, Write},
+    process::exit,
+};
+
+// Use cargo menu instead?
 
 pub fn start() {
     println!("Welcome, to type trainer, you can start your training by typing 'help'");
@@ -27,8 +35,29 @@ fn show_menu(term: &Term) {
     match input.next().unwrap() {
         "quit" => exit(0),
         "help" => print_help_message(),
-        e1 if Exercise::Copy.to_string() == e1 => Exercise::Copy.start(input.next()),
-        e2 if Exercise::Quicktype.to_string() == e2 => Exercise::Quicktype.start(input.next()),
+        // todo: rework this with a new menu
+        exercise if exercise == ExerciseType::Copy.to_string() => {
+            if let Some(file_name) = input.next() {
+                Exercise::build_exercise(ExerciseType::Copy, Option::None, file_name.to_owned())
+                    .start();
+            } else {
+                println!("file name options");
+                for file_name in file_handler::get_file_names() {
+                    println!("{}", file_name);
+                }
+            }
+        }
+        exercise if exercise == ExerciseType::Quicktype.to_string() => {
+            if let Some(file_name) = input.next() {
+                Exercise::build_exercise(ExerciseType::Quicktype, Some(30), file_name.to_owned())
+                    .start();
+            } else {
+                println!("file name options");
+                for file_name in file_handler::get_file_names() {
+                    println!("{}", file_name);
+                }
+            }
+        }
         _ => println!("Invalid option, type 'help' to see the options"),
     }
 }
