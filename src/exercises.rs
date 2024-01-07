@@ -1,12 +1,15 @@
 use console::Term;
 use edit_distance::edit_distance;
 use rand::{seq::SliceRandom, thread_rng};
-use std::{fmt, io, time::SystemTime};
+use std::{
+    fmt, fs,
+    io::{self},
+    time::SystemTime,
+};
+use strum::IntoEnumIterator;
+use strum_macros::EnumIter;
 
-use crate::file_handler;
-
-//  change this to the type of exercise
-#[derive(PartialEq)]
+#[derive(PartialEq, EnumIter)]
 pub enum ExerciseType {
     Quicktype,
     Copy,
@@ -14,11 +17,11 @@ pub enum ExerciseType {
 
 impl ExerciseType {
     // read in the file, and create the contents based on the exercise type
-    fn build_contents_from_file(&self, file_name: String) -> Vec<String> {
-        // call the file handler to read in all the lines
-        let contents = file_handler::get_file_content(file_name);
+    pub fn build_contents_from_file(&self, path: &str) -> Result<Vec<String>, io::Error> {
+        // Do not unwrap, instead
+        let contents = fs::read_to_string(path)?;
 
-        match self {
+        Ok(match self {
             ExerciseType::Quicktype => contents
                 .split([' ', '\n'])
                 .map(|s| s.to_owned())
@@ -27,7 +30,17 @@ impl ExerciseType {
                 .split('\n')
                 .map(|s| s.to_owned())
                 .collect::<Vec<String>>(),
+        })
+    }
+
+    // return an exerciseType based on the given string
+    pub fn get_exercise_type(arg: &str) -> Option<ExerciseType> {
+        for exercise_type in ExerciseType::iter() {
+            if arg == exercise_type.to_string() {
+                return Some(exercise_type);
+            }
         }
+        return Option::None;
     }
 }
 
@@ -55,11 +68,11 @@ pub struct Exercise {
 impl Exercise {
     pub fn build_exercise(
         exercise_type: ExerciseType,
+        contents: Vec<String>,
         duration: Option<usize>,
-        file_name: String,
     ) -> Exercise {
         Exercise {
-            contents: exercise_type.build_contents_from_file(file_name),
+            contents: contents,
             exercise_type: exercise_type,
             start: Option::None,
             duration: duration,
@@ -75,8 +88,12 @@ impl Exercise {
         if self.contents.is_empty() {
             println!("There are no contents in the file.");
         }
+
+        // todo: do a countdown
+
         // start the exercise timer
         self.start = Some(SystemTime::now());
+
         loop {
             if self.duration.is_some_and(|d| self.elapsed_time() >= d) {
                 break;
@@ -102,6 +119,7 @@ impl Exercise {
             ExerciseType::Quicktype => self.contents.choose(&mut thread_rng()).unwrap(),
             ExerciseType::Copy => &self.contents[self.prompts],
         };
+        //todo: return on empty prompts
         term.write_line(prompt).unwrap();
         self.prompts += 1;
 
@@ -131,7 +149,7 @@ impl Exercise {
         println!("Correct: {}", self.correct);
         println!("Mistakes: {}", self.mistakes);
 
-        for (orig, fault) in &self.lines_with_mistakes{
+        for (orig, fault) in &self.lines_with_mistakes {
             println!("{}", orig.trim_end());
             println!("{}", fault.trim_end());
         }

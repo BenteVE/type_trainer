@@ -1,9 +1,6 @@
 use console::Term;
 
-use crate::{
-    exercises::{Exercise, ExerciseType},
-    file_handler,
-};
+use crate::exercises::{Exercise, ExerciseType};
 use std::{
     io::{self, Write},
     process::exit,
@@ -32,33 +29,29 @@ fn show_menu(term: &Term) {
     println!("> {}", buffer);
     let mut input = buffer.as_str().trim().split(" ");
 
-    match input.next().unwrap() {
-        "quit" => exit(0),
-        "help" => print_help_message(),
-        // todo: rework this with a new menu
-        exercise if exercise == ExerciseType::Copy.to_string() => {
-            if let Some(file_name) = input.next() {
-                Exercise::build_exercise(ExerciseType::Copy, Option::None, file_name.to_owned())
-                    .start();
+    let command = input
+        .next()
+        .expect("There should always be at least a command");
+
+    if let Some(exercise_type) = ExerciseType::get_exercise_type(command) {
+        if let Some(path) = input.next() {
+            // check if the path is valid and we can read valid UTF-8 from the
+            if let Ok(contents) = exercise_type.build_contents_from_file(path) {
+                // todo: read the possible duration option, without it, only the copy exercise will work
+                Exercise::build_exercise(exercise_type, contents, Option::None).start();
             } else {
-                println!("file name options");
-                for file_name in file_handler::get_file_names() {
-                    println!("{}", file_name);
-                }
+                println!("Invalid file");
             }
+        } else {
+            println!("Missing arguments");
         }
-        exercise if exercise == ExerciseType::Quicktype.to_string() => {
-            if let Some(file_name) = input.next() {
-                Exercise::build_exercise(ExerciseType::Quicktype, Some(30), file_name.to_owned())
-                    .start();
-            } else {
-                println!("file name options");
-                for file_name in file_handler::get_file_names() {
-                    println!("{}", file_name);
-                }
-            }
+    } else {
+        // match any static arguments
+        match command {
+            "quit" => exit(0),
+            "help" => print_help_message(),
+            _ => println!("Invalid option, type 'help' to see the options"),
         }
-        _ => println!("Invalid option, type 'help' to see the options"),
     }
 }
 
