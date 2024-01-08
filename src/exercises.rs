@@ -2,7 +2,7 @@ use console::Term;
 use edit_distance::edit_distance;
 use rand::{seq::SliceRandom, thread_rng};
 use std::{
-    fmt, fs,
+    fmt,
     io::{self},
     time::SystemTime,
 };
@@ -16,21 +16,18 @@ pub enum ExerciseType {
 }
 
 impl ExerciseType {
-    // read in the file, and create the contents based on the exercise type
-    pub fn build_contents_from_file(&self, path: &str) -> Result<Vec<String>, io::Error> {
-        // Do not unwrap, instead
-        let contents = fs::read_to_string(path)?;
-
-        Ok(match self {
-            ExerciseType::Quicktype => contents
+    // split the content of a file based on the type of exercise
+    pub fn split_content(&self, content: String) -> Vec<String> {
+        match self {
+            ExerciseType::Quicktype => content
                 .split([' ', '\n'])
                 .map(|s| s.to_owned())
                 .collect::<Vec<String>>(),
-            ExerciseType::Copy => contents
+            ExerciseType::Copy => content
                 .split('\n')
                 .map(|s| s.to_owned())
                 .collect::<Vec<String>>(),
-        })
+        }
     }
 
     // return an exerciseType based on the given string
@@ -68,16 +65,16 @@ pub struct Exercise {
 impl Exercise {
     pub fn build_exercise(
         exercise_type: ExerciseType,
-        contents: Vec<String>,
+        content: String,
         duration: Option<usize>,
     ) -> Exercise {
         Exercise {
-            contents: contents,
+            contents: exercise_type.split_content(content),
             exercise_type: exercise_type,
             start: Option::None,
             duration: duration,
             prompts: 0, // count the total prompts given (used for giving the correct next line in the copy exercise)
-            correct: 0, // count the lines without mistakes
+            correct: 0, // count the lines without mistakes => instead, use the amount of mistakes and the total length to calculate the amount of correct characters
             mistakes: 0, // calculated with edit distance
             lines_with_mistakes: Vec::new(), // store a list of tuples with original to typed with mistake
         }

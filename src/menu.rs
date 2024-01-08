@@ -2,6 +2,7 @@ use console::Term;
 
 use crate::exercises::{Exercise, ExerciseType};
 use std::{
+    fs,
     io::{self, Write},
     process::exit,
 };
@@ -36,9 +37,9 @@ fn show_menu(term: &Term) {
     if let Some(exercise_type) = ExerciseType::get_exercise_type(command) {
         if let Some(path) = input.next() {
             // check if the path is valid and we can read valid UTF-8 from the
-            if let Ok(contents) = exercise_type.build_contents_from_file(path) {
+            if let Ok(content) = fs::read_to_string(path) {
                 // todo: read the possible duration option, without it, only the copy exercise will work
-                Exercise::build_exercise(exercise_type, contents, Option::None).start();
+                Exercise::build_exercise(exercise_type, content, Option::None).start();
             } else {
                 println!("Invalid file");
             }
