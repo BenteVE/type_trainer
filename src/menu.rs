@@ -38,8 +38,17 @@ fn show_menu(term: &Term) {
         if let Some(path) = input.next() {
             // check if the path is valid and we can read valid UTF-8 from the
             if let Ok(content) = fs::read_to_string(path) {
-                // todo: read the possible duration option, without it, only the copy exercise will work
-                Exercise::build_exercise(exercise_type, content, Option::None).start();
+                if let Some(duration) = input.next() {
+                    if let Ok(duration) = duration.parse::<usize>() {
+                        Exercise::build_exercise(exercise_type, content, Some(duration)).start();
+                    } else {
+                        println!("Invalid duration");
+                    }
+                } else if exercise_type == ExerciseType::Copy {
+                    Exercise::build_exercise(exercise_type, content, Option::None).start();
+                } else {
+                    println!("The quicktype exercise requires a duration");
+                }
             } else {
                 println!("Invalid file");
             }
