@@ -19,15 +19,12 @@ impl ExerciseType {
     // split the content of a file based on the type of exercise
     pub fn split_content(&self, content: String) -> Vec<String> {
         match self {
-            ExerciseType::Quicktype => content
-                .split([' ', '\n'])
-                .map(|s| s.to_owned())
-                .collect::<Vec<String>>(),
-            ExerciseType::Copy => content
-                .split('\n')
-                .map(|s| s.to_owned())
-                .collect::<Vec<String>>(),
+            ExerciseType::Quicktype => content.split([' ', '\n']),
+            ExerciseType::Copy => content.split(['\n', '\n']),
         }
+        .map(|s| s.to_owned())
+        .filter(|s| !s.is_empty())
+        .collect::<Vec<String>>()
     }
 
     // return an exerciseType based on the given string
@@ -116,7 +113,7 @@ impl Exercise {
             ExerciseType::Quicktype => self.contents.choose(&mut thread_rng()).unwrap(),
             ExerciseType::Copy => &self.contents[self.prompts],
         };
-        //todo: return on empty prompts
+
         term.write_line(prompt).unwrap();
         self.prompts += 1;
 
