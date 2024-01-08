@@ -56,9 +56,12 @@ pub struct Exercise {
     start: Option<SystemTime>,
     duration: Option<usize>, // in seconds
     contents: Vec<String>,
-    count_correct: usize,
+    count_correct: usize, // the characters do not need to be submitted for them to count
     count_fault: usize,
-    // Possible to store a list of tuples with each original character and the mistakes
+    // count the amount of times the backspace was used, and add an option to disable the backspace
+
+    // Possible to store a list of tuples with each original character and the mistakes to
+    // give feedback on which characters are mistaken the most for which other characters
 }
 
 impl Exercise {
@@ -87,6 +90,7 @@ impl Exercise {
 
         // start the exercise timer
         self.start = Some(SystemTime::now());
+        // try to add a timer permanently on top of the screen with counters for correct and mistakes
 
         execute!(io::stdout(), EnterAlternateScreen).unwrap();
         terminal::enable_raw_mode().unwrap();
@@ -175,8 +179,9 @@ impl Exercise {
     fn save_results(&self) {}
 
     fn format_results(&self) {
-        execute!(io::stdout(), Clear(ClearType::All)).unwrap();
+        execute!(io::stdout(), Clear(ClearType::All), MoveTo(0, 0)).unwrap();
         println!("Time: {}", self.elapsed_time());
+
         println!("Correct characters: {}", self.count_correct);
         println!("Mistakes: {}", self.count_fault);
     }
