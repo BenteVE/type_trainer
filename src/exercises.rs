@@ -135,6 +135,13 @@ impl Exercise {
                     match key.code {
                         crossterm::event::KeyCode::Char(c) => {
                             execute!(io::stdout(), Print(c))?;
+                            if typed.len() + 1 > prompt.len()
+                                || prompt.chars().nth(typed.chars().count()).unwrap() != c
+                            {
+                                self.count_fault += 1;
+                            } else {
+                                self.count_correct += 1;
+                            }
                             typed.push(c);
                         }
                         crossterm::event::KeyCode::Backspace => {
@@ -142,6 +149,12 @@ impl Exercise {
                             execute!(io::stdout(), MoveLeft(1), Clear(ClearType::FromCursorDown))?
                         }
                         crossterm::event::KeyCode::Enter => {
+                            // Any missing are also mistakes (extra chars are already counted when the characters were typed)
+
+                            if prompt.chars().count() > typed.chars().count() {
+                                self.count_fault += prompt.chars().count() - typed.chars().count();
+                            }
+
                             return Ok(true);
                         }
                         crossterm::event::KeyCode::Esc => {
