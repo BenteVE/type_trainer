@@ -1,11 +1,14 @@
-use console::Term;
-use edit_distance::edit_distance;
-use rand::{seq::SliceRandom, thread_rng};
-use std::{
-    fmt,
-    io::{self},
-    time::SystemTime,
+use crossterm::cursor::{MoveLeft, MoveTo};
+use crossterm::event::{poll, read, Event};
+use crossterm::style::Print;
+use crossterm::{
+    execute,
+    terminal::{self, Clear, ClearType, EnterAlternateScreen, LeaveAlternateScreen},
 };
+use rand::Rng;
+use std::io;
+use std::time::Duration;
+use std::{fmt, time::SystemTime};
 use strum::IntoEnumIterator;
 use strum_macros::EnumIter;
 
@@ -53,10 +56,9 @@ pub struct Exercise {
     start: Option<SystemTime>,
     duration: Option<usize>, // in seconds
     contents: Vec<String>,
-    prompts: usize,
-    correct: usize,
-    mistakes: usize,
-    lines_with_mistakes: Vec<(String, String)>,
+    count_correct: usize,
+    count_fault: usize,
+    // Possible to store a list of tuples with each original character and the mistakes
 }
 
 impl Exercise {
@@ -70,10 +72,8 @@ impl Exercise {
             exercise_type: exercise_type,
             start: Option::None,
             duration: duration,
-            prompts: 0, // count the total prompts given (used for giving the correct next line in the copy exercise)
-            correct: 0, // count the lines without mistakes => instead, use the amount of mistakes and the total length to calculate the amount of correct characters
-            mistakes: 0, // calculated with edit distance
-            lines_with_mistakes: Vec::new(), // store a list of tuples with original to typed with mistake
+            count_correct: 0,
+            count_fault: 0,
         }
     }
 
@@ -88,47 +88,72 @@ impl Exercise {
         // start the exercise timer
         self.start = Some(SystemTime::now());
 
-        loop {
-            if self.duration.is_some_and(|d| self.elapsed_time() >= d) {
-                break;
+        execute!(io::stdout(), EnterAlternateScreen).unwrap();
+        terminal::enable_raw_mode().unwrap();
+
+        match self.exercise_type {
+            ExerciseType::Quicktype => loop {
+                let prompt = rand::thread_rng().gen_range(0..self.contents.len());
+                if let Ok(false) = self.handle_prompt(prompt) {
+                    break;
+                }
+            },
+            ExerciseType::Copy => {
+                for prompt in 0..self.contents.len() {
+                    if let Ok(false) = self.handle_prompt(prompt) {
+                        break;
+                    }
+                }
             }
-            if self.exercise_type == ExerciseType::Copy && self.prompts >= self.contents.len() {
-                break;
-            }
-            // Note: when the timer runs out, it will not immediately stop the exercise
-            // but allow you to finish the current prompt
-            self.handle_prompt()
         }
+
+        execute!(io::stdout(), LeaveAlternateScreen).unwrap();
+        terminal::disable_raw_mode().unwrap();
+
         self.save_results();
         self.format_results();
     }
 
-    fn handle_prompt(&mut self) {
-        // clear the screen
-        let term = Term::stdout();
-        term.clear_screen().unwrap();
+    // return Ok(true) if the exercise should continue and Ok(false) if it should stop
+    fn handle_prompt(&mut self, prompt: usize) -> Result<bool, io::Error> {
+        let prompt = &self.contents[prompt];
+        let mut typed = String::new();
 
-        // print prompt
-        let prompt = match self.exercise_type {
-            ExerciseType::Quicktype => self.contents.choose(&mut thread_rng()).unwrap(),
-            ExerciseType::Copy => &self.contents[self.prompts],
-        };
+        execute!(
+            io::stdout(),
+            Clear(ClearType::All),
+            MoveTo(0, 0),
+            Print(prompt),
+            Print("\r\n")
+        )?;
 
-        term.write_line(prompt).unwrap();
-        self.prompts += 1;
-
-        // read the input from the user
-        let mut buffer = String::new();
-        let stdin = io::stdin();
-        stdin.read_line(&mut buffer).expect("Error reading line");
-
-        // compare prompt and result and count mistakes
-        match edit_distance(prompt.trim_end(), &buffer.trim_end()) {
-            0 => self.correct += 1,
-            edit_distance => {
-                self.mistakes += edit_distance;
-                self.lines_with_mistakes
-                    .push((prompt.clone(), buffer.clone()));
+        loop {
+            // use non-blocking read to be able to stop while the timer runs
+            if poll(Duration::from_millis(50))? {
+                if let Event::Key(key) = read()? {
+                    // compare the key with the character that is supposed to be typed
+                    match key.code {
+                        crossterm::event::KeyCode::Char(c) => {
+                            execute!(io::stdout(), Print(c))?;
+                            typed.push(c);
+                        }
+                        crossterm::event::KeyCode::Backspace => {
+                            typed.pop();
+                            execute!(io::stdout(), MoveLeft(1), Clear(ClearType::FromCursorDown))?
+                        }
+                        crossterm::event::KeyCode::Enter => {
+                            return Ok(true);
+                        }
+                        crossterm::event::KeyCode::Esc => {
+                            return Ok(false);
+                        }
+                        _ => {}
+                    }
+                }
+            } else if let Some(duration) = self.duration {
+                if self.elapsed_time() > duration {
+                    return Ok(false);
+                }
             }
         }
     }
@@ -137,16 +162,10 @@ impl Exercise {
     fn save_results(&self) {}
 
     fn format_results(&self) {
-        Term::stdout().clear_screen().unwrap();
+        execute!(io::stdout(), Clear(ClearType::All)).unwrap();
         println!("Time: {}", self.elapsed_time());
-        println!("Prompts: {}", self.prompts);
-        println!("Correct: {}", self.correct);
-        println!("Mistakes: {}", self.mistakes);
-
-        for (orig, fault) in &self.lines_with_mistakes {
-            println!("{}", orig.trim_end());
-            println!("{}", fault.trim_end());
-        }
+        println!("Correct characters: {}", self.count_correct);
+        println!("Mistakes: {}", self.count_fault);
     }
 
     fn elapsed_time(&self) -> usize {

@@ -1,4 +1,8 @@
-use console::Term;
+use crossterm::{
+    cursor::MoveTo,
+    execute,
+    terminal::{Clear, ClearType},
+};
 
 use crate::exercises::{Exercise, ExerciseType};
 use std::{
@@ -7,17 +11,16 @@ use std::{
     process::exit,
 };
 
-// Use cargo menu instead?
+// Todo: create a better menu with simpler expandable argument parsing
 
 pub fn start() {
     println!("Welcome, to type trainer, you can start your training by typing 'help'");
-    let term = Term::stdout();
     loop {
-        show_menu(&term);
+        show_menu();
     }
 }
 
-fn show_menu(term: &Term) {
+fn show_menu() {
     println!();
     print!("> ");
     io::stdout().flush().unwrap();
@@ -26,7 +29,8 @@ fn show_menu(term: &Term) {
     let stdin = io::stdin();
     stdin.read_line(&mut buffer).expect("Error reading line");
 
-    term.clear_screen().unwrap();
+    execute!(io::stdout(), Clear(ClearType::All), MoveTo(0, 0)).unwrap();
+
     println!("> {}", buffer);
     let mut input = buffer.as_str().trim().split(" ");
 
