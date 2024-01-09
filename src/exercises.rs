@@ -16,15 +16,17 @@ pub struct Exercise {
     exercise_type: ExerciseType,
     start: Option<SystemTime>,
     duration: Option<u16>, // in seconds
-    blind: bool,           //hide the text when the user is typing
+    blind: bool,           // hide the text when the user is typing
     backspace: bool,       // allow the use of the backspace key
     contents: Vec<String>,
     count_correct: usize, // the characters do not need to be submitted for them to count
     count_fault: usize,
-    // count the amount of times the backspace was used, and add an option to disable the backspace
+    // count the amount of times the backspace was used
 
-    // Possible to store a list of tuples with each original character and the mistakes to
-    // give feedback on which characters are mistaken the most for which other characters
+    // Possibly add option to hide the cursor
+
+    // Possibly store all typed lines with with the originals in a tuple to so we can show the user the text 
+    // after the exercises is completed
 }
 
 impl Exercise {
@@ -107,6 +109,7 @@ impl Exercise {
                         crossterm::event::KeyCode::Char(c) => {
                             match self.blind {
                                 true => execute!(io::stdout(), MoveRight(1))?,
+                                // todo: print in a red color when a mistake is made
                                 false => execute!(io::stdout(), Print(c))?,
                             }
 
