@@ -8,9 +8,7 @@ use crossterm::{
 use rand::Rng;
 use std::io;
 use std::time::Duration;
-use std::{fmt, time::SystemTime};
-use strum::IntoEnumIterator;
-use strum_macros::EnumIter;
+use std::time::SystemTime;
 
 use crate::exercise_type::ExerciseType;
 
