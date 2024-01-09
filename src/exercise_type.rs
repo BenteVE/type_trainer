@@ -1,9 +1,8 @@
-use std::fmt;
-
+use clap::{builder::PossibleValue, ValueEnum};
 use strum::IntoEnumIterator;
 use strum_macros::EnumIter;
 
-#[derive(PartialEq, EnumIter)]
+#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, EnumIter)]
 pub enum ExerciseType {
     Quicktype,
     Copy,
@@ -32,12 +31,37 @@ impl ExerciseType {
     }
 }
 
-// makes the to_string() method available for the variants
-impl fmt::Display for ExerciseType {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            ExerciseType::Quicktype => write!(f, "quicktype"),
-            ExerciseType::Copy => write!(f, "copy"),
+impl std::fmt::Display for ExerciseType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        self.to_possible_value()
+            .expect("no values are skipped")
+            .get_name()
+            .fmt(f)
+    }
+}
+
+impl ValueEnum for ExerciseType {
+    fn value_variants<'a>() -> &'a [Self] {
+        &[ExerciseType::Quicktype, ExerciseType::Copy]
+    }
+
+    fn to_possible_value<'a>(&self) -> Option<PossibleValue> {
+        Some(match self {
+            ExerciseType::Quicktype => PossibleValue::new("Quicktype").help("Select a random word from the text"),
+            ExerciseType::Copy => PossibleValue::new("Copy").help("Copy the text line by line"),
+        })
+    }
+}
+
+impl std::str::FromStr for ExerciseType {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        for variant in Self::value_variants() {
+            if variant.to_possible_value().unwrap().matches(s, false) {
+                return Ok(*variant);
+            }
         }
+        Err(format!("invalid variant: {s}"))
     }
 }

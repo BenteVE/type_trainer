@@ -15,7 +15,7 @@ use crate::exercise_type::ExerciseType;
 pub struct Exercise {
     exercise_type: ExerciseType,
     start: Option<SystemTime>,
-    duration: Option<usize>, // in seconds
+    duration: Option<u16>, // in seconds
     contents: Vec<String>,
     count_correct: usize, // the characters do not need to be submitted for them to count
     count_fault: usize,
@@ -29,7 +29,7 @@ impl Exercise {
     pub fn build_exercise(
         exercise_type: ExerciseType,
         content: String,
-        duration: Option<usize>,
+        duration: Option<u16>,
     ) -> Exercise {
         Exercise {
             contents: exercise_type.split_content(content),
@@ -129,7 +129,7 @@ impl Exercise {
                     }
                 }
             } else if let Some(duration) = self.duration {
-                if self.elapsed_time() > duration {
+                if self.elapsed_time() > duration as usize{
                     return Ok(false);
                 }
             }

@@ -2,10 +2,13 @@
 name = "type_trainer"
 version = "0.1.0"
 edition = "2021"
+description = "A terminal typing trainer"
+authors = ["Bente Van Eeckhoudt"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+clap = { version = "4.4.14", features = ["derive", "cargo"] }
 crossterm = "0.27.0"
 rand = "0.8.5"
 strum = "0.25.0"
