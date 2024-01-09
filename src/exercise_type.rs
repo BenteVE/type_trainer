@@ -1,8 +1,6 @@
 use clap::{builder::PossibleValue, ValueEnum};
-use strum::IntoEnumIterator;
-use strum_macros::EnumIter;
 
-#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, EnumIter)]
+#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub enum ExerciseType {
     Quicktype,
     Copy,
@@ -18,16 +16,6 @@ impl ExerciseType {
         .map(|s| s.to_owned())
         .filter(|s| !s.is_empty())
         .collect::<Vec<String>>()
-    }
-
-    // return an exerciseType based on the given string
-    pub fn get_exercise_type(arg: &str) -> Option<ExerciseType> {
-        for exercise_type in ExerciseType::iter() {
-            if arg == exercise_type.to_string() {
-                return Some(exercise_type);
-            }
-        }
-        return Option::None;
     }
 }
 

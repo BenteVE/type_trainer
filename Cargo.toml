@@ -11,5 +11,3 @@ authors = ["Bente Van Eeckhoudt"]
 clap = { version = "4.4.14", features = ["derive", "cargo"] }
 crossterm = "0.27.0"
 rand = "0.8.5"
-strum = "0.25.0"
-strum_macros = "0.25.3"
