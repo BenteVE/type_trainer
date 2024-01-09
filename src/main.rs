@@ -43,7 +43,7 @@ fn main() {
                 .short('c')
                 .help("Disable the backspace")
                 .required(false)
-                .action(ArgAction::SetTrue),
+                .action(ArgAction::SetFalse),
         )
         .get_matches(); // builds the instance of ArgMatches
 
@@ -54,10 +54,11 @@ fn main() {
                     .get_one::<ExerciseType>("ExerciseType")
                     .expect("'ExerciseType' is required and parsing will fail if its missing");
                 let duration = matches.get_one::<u16>("duration").copied();
-                let _blind = matches.get_flag("blind");
-                let _backspace = matches.get_flag("backspace");
+                let blind = matches.get_flag("blind");
+                let backspace = matches.get_flag("backspace");
 
-                Exercise::build_exercise(exercise_type, content, duration).start();
+                Exercise::build_exercise(exercise_type, content, duration, blind, backspace)
+                    .start();
             }
             Err(e) => panic!("{}", e.to_string()),
         }

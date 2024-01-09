@@ -1,4 +1,4 @@
-use crossterm::cursor::{MoveLeft, MoveTo};
+use crossterm::cursor::{MoveLeft, MoveRight, MoveTo};
 use crossterm::event::{poll, read, Event};
 use crossterm::style::Print;
 use crossterm::{
@@ -16,6 +16,8 @@ pub struct Exercise {
     exercise_type: ExerciseType,
     start: Option<SystemTime>,
     duration: Option<u16>, // in seconds
+    blind: bool,           //hide the text when the user is typing
+    backspace: bool,       // allow the use of the backspace key
     contents: Vec<String>,
     count_correct: usize, // the characters do not need to be submitted for them to count
     count_fault: usize,
@@ -30,12 +32,16 @@ impl Exercise {
         exercise_type: ExerciseType,
         content: String,
         duration: Option<u16>,
+        blind: bool,
+        backspace: bool,
     ) -> Exercise {
         Exercise {
             contents: exercise_type.split_content(content),
             exercise_type: exercise_type,
             start: Option::None,
-            duration: duration,
+            duration,
+            blind,
+            backspace,
             count_correct: 0,
             count_fault: 0,
         }
@@ -99,7 +105,11 @@ impl Exercise {
                     // compare the key with the character that is supposed to be typed
                     match key.code {
                         crossterm::event::KeyCode::Char(c) => {
-                            execute!(io::stdout(), Print(c))?;
+                            match self.blind {
+                                true => execute!(io::stdout(), MoveRight(1))?,
+                                false => execute!(io::stdout(), Print(c))?,
+                            }
+
                             if typed.len() + 1 > prompt.len()
                                 || prompt.chars().nth(typed.chars().count()).unwrap() != c
                             {
@@ -109,7 +119,7 @@ impl Exercise {
                             }
                             typed.push(c);
                         }
-                        crossterm::event::KeyCode::Backspace => {
+                        crossterm::event::KeyCode::Backspace if self.backspace => {
                             typed.pop();
                             execute!(io::stdout(), MoveLeft(1), Clear(ClearType::FromCursorDown))?
                         }
@@ -129,7 +139,7 @@ impl Exercise {
                     }
                 }
             } else if let Some(duration) = self.duration {
-                if self.elapsed_time() > duration as usize{
+                if self.elapsed_time() > duration as usize {
                     return Ok(false);
                 }
             }
