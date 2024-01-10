@@ -1,2 +1,4 @@
-pub mod exercises;
-pub mod exercise_type;
+pub mod exercise;
+pub mod settings;
+pub mod split;
+pub mod stats;

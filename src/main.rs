@@ -1,25 +1,26 @@
-use std::{fs, path::PathBuf};
+use std::{fs, path::PathBuf, time::Duration};
 
 use clap::{command, value_parser, Arg, ArgAction};
-use type_trainer::{exercise_type::ExerciseType, exercises::Exercise};
+use type_trainer::{exercise::Exercise, settings::Settings, split::Split};
 
 fn main() {
     let matches = command!()
         .arg(
-            Arg::new("ExerciseType")
-                .index(1)
-                .help("The type of exercise")
-                .required(true)
-                .value_parser(value_parser!(ExerciseType)),
-        )
-        .arg(
             Arg::new("path")
-                .index(2)
+                .index(1)
                 .help("The path to the exercise file")
                 .required(true)
                 .value_parser(value_parser!(PathBuf)),
         )
-        // optional
+        // Determine how to split the content of the file into prompts
+        .arg(
+            Arg::new("split")
+                .index(2)
+                .help("Determines how to split the contents of the file into prompts")
+                .required(true)
+                .value_parser(value_parser!(Split)),
+        )
+        // Stats
         .arg(
             Arg::new("duration")
                 .long("duration")
@@ -29,7 +30,6 @@ fn main() {
                 .action(ArgAction::Set)
                 .value_parser(value_parser!(u16).range(1..)),
         )
-        // flags
         .arg(
             Arg::new("blind")
                 .long("blind")
@@ -50,15 +50,23 @@ fn main() {
     if let Some(path) = matches.get_one::<PathBuf>("path") {
         match fs::read_to_string(path) {
             Ok(content) => {
-                let exercise_type = *matches
-                    .get_one::<ExerciseType>("ExerciseType")
-                    .expect("'ExerciseType' is required and parsing will fail if its missing");
-                let duration = matches.get_one::<u16>("duration").copied();
+                let split = matches
+                    .get_one::<Split>("split")
+                    .expect("'split' is required and parsing will fail if its missing")
+                    .to_owned();
+
+                let duration = match matches.get_one::<u16>("duration") {
+                    Some(d) => Some(Duration::from_secs(*d as u64)),
+                    None => Option::None,
+                };
                 let blind = matches.get_flag("blind");
                 let backspace = matches.get_flag("backspace");
 
-                Exercise::build_exercise(exercise_type, content, duration, blind, backspace)
-                    .start();
+                let settings = Settings::build(path.to_owned(), split, duration, blind, backspace);
+
+                let prompts = settings.split_content_into_prompts(content);
+
+                Exercise::build(prompts, settings).start();
             }
             Err(e) => panic!("{}", e.to_string()),
         }
