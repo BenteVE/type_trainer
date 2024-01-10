@@ -45,30 +45,46 @@ fn main() {
                 .required(false)
                 .action(ArgAction::SetFalse),
         )
+        .arg(
+            Arg::new("random")
+                .short('r')
+                .help("Give the prompts in random order instead of consecutive order")
+                .required(false)
+                .action(ArgAction::SetTrue),
+        )
         .get_matches(); // builds the instance of ArgMatches
 
-    if let Some(path) = matches.get_one::<PathBuf>("path") {
-        match fs::read_to_string(path) {
-            Ok(content) => {
-                let split = matches
-                    .get_one::<Split>("split")
-                    .expect("'split' is required and parsing will fail if its missing")
-                    .to_owned();
+    let path = matches
+        .get_one::<PathBuf>("path")
+        .expect("Path is required");
 
-                let duration = match matches.get_one::<u16>("duration") {
-                    Some(d) => Some(Duration::from_secs(*d as u64)),
-                    None => Option::None,
-                };
-                let blind = matches.get_flag("blind");
-                let backspace = matches.get_flag("backspace");
+    match fs::read_to_string(path) {
+        Ok(content) => {
+            let split = matches
+                .get_one::<Split>("split")
+                .expect("'split' is required and parsing will fail if its missing")
+                .to_owned();
 
-                let settings = Settings::build(path.to_owned(), split, duration, blind, backspace);
+            let duration = match matches.get_one::<u16>("duration") {
+                Some(d) => Some(Duration::from_secs(*d as u64)),
+                None => Option::None,
+            };
+            let blind = matches.get_flag("blind");
+            let backspace = matches.get_flag("backspace");
+            let random = matches.get_flag("random");
 
-                let prompts = settings.split_content_into_prompts(content);
+            let settings =
+                Settings::build(path.to_owned(), split, duration, blind, backspace, random);
 
-                Exercise::build(prompts, settings).start();
+            let prompts = split.into_prompts(content);
+
+            if prompts.is_empty() {
+                println!("Error: There are no contents in the file.");
+                return;
             }
-            Err(e) => panic!("{}", e.to_string()),
+
+            Exercise::build(prompts, settings).start();
         }
+        Err(e) => println!("Error: {}", e.to_string()),
     }
 }
