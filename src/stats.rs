@@ -32,7 +32,7 @@ impl Serialize for Stats {
         S: Serializer,
     {
         let mut state = serializer.serialize_struct("Settings", 4)?;
-        state.serialize_field("file", &self.time.to_rfc2822())?;
+        state.serialize_field("time", &self.time.to_rfc2822())?;
         state.serialize_field("count_prompts", &self.count_prompts)?;
         state.serialize_field("count_correct", &self.count_correct)?;
         state.serialize_field("count_fault", &self.count_fault)?;

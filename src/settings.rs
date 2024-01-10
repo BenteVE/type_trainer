@@ -38,7 +38,7 @@ impl Serialize for Settings {
         S: Serializer,
     {
         let mut state = serializer.serialize_struct("Settings", 5)?;
-        state.serialize_field("file", &self.file_path.file_name())?;
+        state.serialize_field("file", &self.file_path.file_name().unwrap().to_str())?;
         state.serialize_field("split", &self.split.to_string())?;
         state.serialize_field("blind", &self.blind)?;
         state.serialize_field("backspace", &self.backspace)?;
