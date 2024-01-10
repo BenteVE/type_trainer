@@ -1,6 +1,6 @@
 use crate::{settings::Settings, stats::Stats};
 
-use crossterm::cursor::{MoveLeft, MoveTo};
+use crossterm::cursor::{MoveLeft, MoveTo, MoveRight};
 use crossterm::event::{poll, read, Event};
 use crossterm::style::Print;
 use crossterm::{
@@ -8,8 +8,7 @@ use crossterm::{
     terminal::{self, Clear, ClearType, EnterAlternateScreen, LeaveAlternateScreen},
 };
 use rand::Rng;
-use std::fs::OpenOptions;
-use std::io::{self, Write};
+use std::io;
 use std::time::{Duration, Instant};
 
 pub struct Exercise {
@@ -29,19 +28,29 @@ impl Exercise {
 
     // start the exercise (loop giving are reading prompts and answers while the timer had not reached the end)
     pub fn start(&mut self) {
-        // start the exercise timer
-        // self.start = Some(Instant::now());
 
         execute!(io::stdout(), EnterAlternateScreen).unwrap();
         terminal::enable_raw_mode().unwrap();
 
-        // count the given prompts
-        execute!(
-            io::stdout(),
-            Print("Handle the prompts based on the settings")
-        )
-        .unwrap();
-        // rand::thread_rng().gen_range(0..self.contents.len());
+        // start the exercise timer
+        self.stats.start = Some(Instant::now());
+
+        loop {
+            let prompt = match self.settings.random {
+                true => rand::thread_rng().gen_range(0..self.prompts.len()),
+                false => self.stats.count_prompts,
+            };
+
+            match self.handle_prompt(prompt) {
+                Ok(true) => {}
+                Ok(false) => break,
+                Err(e) => panic!("{}", e.to_string()),
+            }
+
+            self.stats.count_prompts += 1;
+        }
+
+        self.stats.end = Some(Instant::now());
 
         execute!(io::stdout(), LeaveAlternateScreen).unwrap();
         terminal::disable_raw_mode().unwrap();
@@ -71,8 +80,12 @@ impl Exercise {
                     // compare the key with the character that is supposed to be typed
                     match key.code {
                         crossterm::event::KeyCode::Char(c) => {
-                            // Do handle the character based on the stats
-                            execute!(io::stdout(), Print(c))?;
+                            match self.settings.blind {
+                                true => execute!(io::stdout(), MoveRight(1))?,
+                                false => execute!(io::stdout(), Print(c))?,
+                            }
+                            // handle the counting of the correct or wrong characters
+                                                        
                             typed.push(c);
                         }
                         crossterm::event::KeyCode::Backspace if self.settings.backspace => {
@@ -90,8 +103,22 @@ impl Exercise {
                         _ => {}
                     }
                 }
+            } else if self.timer_expired() {
+                return Ok(false);
             }
-            // check if the duration has expired
+        }
+    }
+
+    // return true if false if the timer has expired
+    fn timer_expired(&self) -> bool {
+        if let Some(duration) = self.settings.duration {
+            self.stats
+                .start
+                .expect("The timer should be started at the start of the exercise")
+                .elapsed()
+                >= duration
+        } else {
+            false
         }
     }
 }
