@@ -7,6 +7,26 @@ pub enum Split {
     Text,
 }
 
+impl Split {
+    pub fn into_prompts(&self, content: String) -> Vec<String> {
+        let prompts: Vec<String> = match self {
+            Split::Words => content
+                .split([' ', '\n'])
+                .map(|s| s.to_owned())
+                .filter(|s| !s.is_empty())
+                .collect(),
+            Split::Lines => content
+                .split(['\n'])
+                .map(|s| s.to_owned())
+                .filter(|s| !s.is_empty())
+                .collect(),
+            Split::Text => vec![content],
+        };
+
+        prompts
+    }
+}
+
 // Can also be derived with feature flag `derive`
 impl ValueEnum for Split {
     fn value_variants<'a>() -> &'a [Self] {

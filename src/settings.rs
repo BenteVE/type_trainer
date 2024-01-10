@@ -8,6 +8,7 @@ pub struct Settings {
     pub duration: Option<Duration>,
     pub blind: bool,     // hide the text when the user is typing
     pub backspace: bool, // allow the use of the backspace key
+    pub random: bool,
 }
 impl Settings {
     pub fn build(
@@ -16,6 +17,7 @@ impl Settings {
         duration: Option<Duration>,
         blind: bool,
         backspace: bool,
+        random: bool,
     ) -> Settings {
         Settings {
             file_path: file_path,
@@ -23,29 +25,8 @@ impl Settings {
             duration,
             blind,
             backspace,
+            random,
         }
-    }
-
-    pub fn split_content_into_prompts(&self, content: String) -> Vec<String> {
-        let prompts: Vec<String> = match self.split {
-            Split::Words => content
-                .split([' ', '\n'])
-                .map(|s| s.to_owned())
-                .filter(|s| !s.is_empty())
-                .collect(),
-            Split::Lines => content
-                .split(['\n'])
-                .map(|s| s.to_owned())
-                .filter(|s| !s.is_empty())
-                .collect(),
-            Split::Text => vec![content],
-        };
-
-        if prompts.is_empty() {
-            panic!("There are no contents in the file.");
-        }
-
-        prompts
     }
 }
 
