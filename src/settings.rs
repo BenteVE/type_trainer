@@ -1,5 +1,7 @@
 use std::{path::PathBuf, time::Duration};
 
+use serde::ser::{Serialize, SerializeStruct, Serializer};
+
 use crate::split::Split;
 
 pub struct Settings {
@@ -30,4 +32,17 @@ impl Settings {
     }
 }
 
-// Implement serialize for settings
+impl Serialize for Settings {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        let mut state = serializer.serialize_struct("Settings", 5)?;
+        state.serialize_field("file", &self.file_path.file_name())?;
+        state.serialize_field("split", &self.split.to_string())?;
+        state.serialize_field("blind", &self.blind)?;
+        state.serialize_field("backspace", &self.backspace)?;
+        state.serialize_field("random", &self.random)?;
+        state.end()
+    }
+}

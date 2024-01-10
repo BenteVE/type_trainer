@@ -1,6 +1,6 @@
 use crate::{settings::Settings, stats::Stats};
 
-use crossterm::cursor::{MoveLeft, MoveTo, MoveRight};
+use crossterm::cursor::{MoveLeft, MoveRight, MoveTo};
 use crossterm::event::{poll, read, Event};
 use crossterm::style::Print;
 use crossterm::{
@@ -28,7 +28,6 @@ impl Exercise {
 
     // start the exercise (loop giving are reading prompts and answers while the timer had not reached the end)
     pub fn start(&mut self) {
-
         execute!(io::stdout(), EnterAlternateScreen).unwrap();
         terminal::enable_raw_mode().unwrap();
 
@@ -36,18 +35,11 @@ impl Exercise {
         self.stats.start = Some(Instant::now());
 
         loop {
-            let prompt = match self.settings.random {
-                true => rand::thread_rng().gen_range(0..self.prompts.len()),
-                false => self.stats.count_prompts,
-            };
-
-            match self.handle_prompt(prompt) {
+            match self.handle_prompt() {
                 Ok(true) => {}
                 Ok(false) => break,
                 Err(e) => panic!("{}", e.to_string()),
             }
-
-            self.stats.count_prompts += 1;
         }
 
         self.stats.end = Some(Instant::now());
@@ -56,13 +48,26 @@ impl Exercise {
         terminal::disable_raw_mode().unwrap();
 
         println!("Print the serialized stats");
-        //Exercise::save_results(&results);
-        //Exercise::print_results(&results);
+        println!("{}", serde_json::to_string(&self.settings).unwrap());
+        println!("{}", serde_json::to_string(&self.stats).unwrap());
     }
 
     // return Ok(true) if the exercise should continue and Ok(false) if it should stop
-    fn handle_prompt(&mut self, prompt: usize) -> Result<bool, io::Error> {
-        let prompt = &self.prompts[prompt];
+    fn handle_prompt(&mut self) -> Result<bool, io::Error> {
+        let index = match self.settings.random {
+            true => rand::thread_rng().gen_range(0..self.prompts.len()),
+            false => {
+                if self.stats.count_prompts >= self.prompts.len() {
+                    return Ok(false);
+                } else {
+                    self.stats.count_prompts
+                }
+            }
+        };
+
+        self.stats.count_prompts += 1;
+
+        let prompt = self.prompts[index].clone();
         let mut typed = String::new();
 
         execute!(
@@ -85,7 +90,7 @@ impl Exercise {
                                 false => execute!(io::stdout(), Print(c))?,
                             }
                             // handle the counting of the correct or wrong characters
-                                                        
+
                             typed.push(c);
                         }
                         crossterm::event::KeyCode::Backspace if self.settings.backspace => {

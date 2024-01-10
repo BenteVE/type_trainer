@@ -2,6 +2,8 @@ use std::time::Instant;
 
 use chrono::{DateTime, Local};
 
+use serde::ser::{Serialize, SerializeStruct, Serializer};
+
 pub struct Stats {
     pub time: DateTime<Local>,
     pub start: Option<Instant>,
@@ -24,4 +26,16 @@ impl Stats {
     }
 }
 
-// Implement serialize for stats
+impl Serialize for Stats {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        let mut state = serializer.serialize_struct("Settings", 4)?;
+        state.serialize_field("file", &self.time.to_rfc2822())?;
+        state.serialize_field("count_prompts", &self.count_prompts)?;
+        state.serialize_field("count_correct", &self.count_correct)?;
+        state.serialize_field("count_fault", &self.count_fault)?;
+        state.end()
+    }
+}
