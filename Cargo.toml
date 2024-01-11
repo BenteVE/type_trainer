@@ -8,9 +8,11 @@ authors = ["Bente Van Eeckhoudt"]
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+anyhow = "1.0.79"
 chrono = "0.4.31"
 clap = { version = "4.4.14", features = ["derive", "cargo"] }
 crossterm = "0.27.0"
 rand = "0.8.5"
+ratatui = "0.25.0"
 serde = "1.0.195"
 serde_json = "1.0.111"
