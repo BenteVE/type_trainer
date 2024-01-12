@@ -1,5 +1,7 @@
+use crossterm::event::{KeyCode, KeyEvent, KeyEventKind, KeyModifiers};
+use rand::seq::SliceRandom;
+
 use crate::exercise::{settings::Settings, stats::Stats};
-use crate::ui::update::next_prompt;
 
 use std::time::Instant;
 
@@ -32,7 +34,54 @@ impl Exercise {
         self.stats.start = Some(Instant::now());
 
         // select the first prompt
-        next_prompt(self);
+        self.next_prompt();
+    }
+
+    pub fn update(&mut self, key_event: KeyEvent) {
+        if key_event.kind == KeyEventKind::Press {
+            match key_event.code {
+                KeyCode::Esc => self.quit(),
+                KeyCode::Char('c') | KeyCode::Char('C')
+                    if key_event.modifiers == KeyModifiers::CONTROL =>
+                {
+                    self.quit()
+                }
+                KeyCode::Enter => {
+                    self.next_prompt();
+                    self.typed = String::new();
+                }
+                KeyCode::Char(c) => {
+                    self.typed.push(c);
+                }
+                KeyCode::Backspace => {
+                    self.typed.pop();
+                }
+
+                _ => {}
+            };
+        }
+    }
+
+    pub fn next_prompt(&mut self) {
+        match self.settings.random {
+            true => {
+                self.prompt = self
+                    .settings
+                    .prompts
+                    .choose(&mut rand::thread_rng())
+                    .unwrap()
+                    .clone()
+            }
+            false => {
+                if self.stats.count_prompts >= self.settings.prompts.len() {
+                    self.quit();
+                    return;
+                } else {
+                    self.prompt = self.settings.prompts[self.stats.count_prompts].clone();
+                }
+            }
+        }
+        self.stats.count_prompts += 1;
     }
 
     /// Set should_quit to true to quit the application.

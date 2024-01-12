@@ -6,7 +6,6 @@ use type_trainer::{
     ui::{
         event::{Event, EventHandler},
         tui::Tui,
-        update::update,
     },
 };
 
@@ -23,6 +22,8 @@ fn main() -> Result<()> {
     let mut tui = Tui::new(terminal, events);
     tui.enter()?;
 
+    // Do a countdown
+
     exercise.start();
 
     // Start the main loop.
@@ -32,11 +33,13 @@ fn main() -> Result<()> {
         // Handle events.
         match tui.events.next()? {
             Event::Tick => {}
-            Event::Key(key_event) => update(&mut exercise, key_event),
+            Event::Key(key_event) => exercise.update(key_event),
             Event::Mouse(_) => {}
             Event::Resize(_, _) => {}
         };
     }
+
+    // Show the stats on an end screen
 
     // Exit the user interface.
     tui.exit()?;
