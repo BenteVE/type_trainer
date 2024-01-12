@@ -10,7 +10,6 @@ pub struct Exercise {
     pub stats: Stats,
     pub prompt: String, // store the current prompt
     pub typed: String,  // store whatever is typed for the current prompt
-    // implement functions to compare a character to the current prompts
     pub should_quit: bool,
 }
 
@@ -46,33 +45,49 @@ impl Exercise {
                 {
                     self.quit()
                 }
-                KeyCode::Enter => {
-                    // Any missing are also mistakes (extra chars are already counted when the characters were typed)
-                    if self.prompt.chars().count() > self.typed.chars().count() {
-                        self.stats.count_fault +=
-                            self.prompt.chars().count() - self.typed.chars().count();
-                    }
-                    self.next_prompt();
-                    self.typed = String::new();
-                }
-                KeyCode::Char(c) => {
-                    if self.typed.len() + 1 > self.prompt.len()
-                        || self.prompt.chars().nth(self.typed.chars().count()).unwrap() != c
-                    {
-                        self.stats.count_fault += 1;
-                    } else {
-                        self.stats.count_correct += 1;
-                    }
-                    self.typed.push(c);
-                }
-                KeyCode::Backspace => {
-                    if self.settings.backspace {
-                        self.typed.pop();
-                    }
-                }
-
+                KeyCode::Enter => self.press_enter(),
+                KeyCode::Char(c) => self.press_char(c),
+                KeyCode::Backspace => self.press_backspace(),
                 _ => {}
             };
+        }
+    }
+
+    // This function should work differently when the split is text
+    fn press_enter(&mut self) {
+        self.stats.count_enter += 1;
+        // Any missing are also mistakes (extra chars are already counted when the characters were typed)
+        if self.prompt.chars().count() > self.typed.chars().count() {
+            self.stats.count_fault += self.prompt.chars().count() - self.typed.chars().count();
+        }
+        self.next_prompt();
+        self.typed = String::new();
+    }
+
+    fn press_backspace(&mut self) {
+        match self.settings.backspace {
+            true => {
+                self.typed.pop();
+                self.stats.count_backspace += 1;
+            }
+            false => {}
+        }
+    }
+
+    fn press_char(&mut self, c: char) {
+        match c == self.correct_char() {
+            true => self.stats.count_correct += 1,
+            false => self.stats.count_fault += 1,
+        }
+        self.typed.push(c);
+    }
+
+    /// Returns the character that is supposed to be pressed at any given time
+    fn correct_char(&self) -> char {
+        if self.typed.len() + 1 > self.prompt.len() {
+            return '\n';
+        } else {
+            return self.prompt.chars().nth(self.typed.chars().count()).unwrap();
         }
     }
 
@@ -87,15 +102,14 @@ impl Exercise {
                     .clone()
             }
             false => {
-                if self.stats.count_prompts >= self.settings.prompts.len() {
+                if self.stats.count_enter >= self.settings.prompts.len() {
                     self.quit();
                     return;
                 } else {
-                    self.prompt = self.settings.prompts[self.stats.count_prompts].clone();
+                    self.prompt = self.settings.prompts[self.stats.count_enter].clone();
                 }
             }
         }
-        self.stats.count_prompts += 1;
     }
 
     /// Set should_quit to true to quit the application.
