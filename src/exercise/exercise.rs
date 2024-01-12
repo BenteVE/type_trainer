@@ -1,35 +1,52 @@
-use crate::{settings::Settings, stats::Stats};
+use crate::exercise::{settings::Settings, stats::Stats};
 
+use clap::builder::Str;
 use crossterm::cursor::{MoveLeft, MoveRight, MoveTo};
-use crossterm::event::{poll, read, Event};
+use crossterm::event::{poll, read, Event, KeyEventKind};
 use crossterm::style::Print;
 use crossterm::{
     execute,
     terminal::{self, Clear, ClearType, EnterAlternateScreen, LeaveAlternateScreen},
 };
+
 use rand::Rng;
 use std::io;
 use std::time::{Duration, Instant};
 
 pub struct Exercise {
-    prompts: Vec<String>,
-    settings: Settings,
-    stats: Stats,
+    pub settings: Settings,
+    pub stats: Stats,
+    pub prompt: String, // store the current prompt
+    pub typed: String,  // store whatever is typed for the current prompt
+    // implement functions to compare a character to the current prompts
+    pub should_quit: bool,
 }
 
 impl Exercise {
-    pub fn build(prompts: Vec<String>, settings: Settings) -> Exercise {
+    pub fn build(settings: Settings) -> Exercise {
         Exercise {
-            prompts,
             settings,
             stats: Stats::new(),
+            prompt: String::new(),
+            typed: String::new(),
+            should_quit: false,
         }
+    }
+
+    /// Handles the tick event of the terminal.
+    pub fn tick(&self) {}
+
+    /// Set should_quit to true to quit the application.
+    pub fn quit(&mut self) {
+        self.should_quit = true;
     }
 
     // start the exercise (loop giving are reading prompts and answers while the timer had not reached the end)
     pub fn start(&mut self) {
         execute!(io::stdout(), EnterAlternateScreen).unwrap();
         terminal::enable_raw_mode().unwrap();
+
+        // build the alternate screen with ratatui
 
         // start the exercise timer
         self.stats.start = Some(Instant::now());
@@ -50,62 +67,47 @@ impl Exercise {
         println!("Print the serialized stats");
         println!("{}", serde_json::to_string(&self.settings).unwrap());
         println!("{}", serde_json::to_string(&self.stats).unwrap());
+
+        // write serializing to file
     }
 
     // return Ok(true) if the exercise should continue and Ok(false) if it should stop
     fn handle_prompt(&mut self) -> Result<bool, io::Error> {
-        let index = match self.settings.random {
-            true => rand::thread_rng().gen_range(0..self.prompts.len()),
-            false => {
-                if self.stats.count_prompts >= self.prompts.len() {
-                    return Ok(false);
-                } else {
-                    self.stats.count_prompts
-                }
-            }
-        };
-
-        self.stats.count_prompts += 1;
-
-        let prompt = self.prompts[index].clone();
-        let mut typed = String::new();
-
-        execute!(
-            io::stdout(),
-            Clear(ClearType::All),
-            MoveTo(0, 0),
-            Print(prompt),
-            Print("\r\n")
-        )?;
 
         loop {
             // use non-blocking read to be able to stop while the timer runs
             if poll(Duration::from_millis(50))? {
                 if let Event::Key(key) = read()? {
                     // compare the key with the character that is supposed to be typed
-                    match key.code {
-                        crossterm::event::KeyCode::Char(c) => {
-                            match self.settings.blind {
-                                true => execute!(io::stdout(), MoveRight(1))?,
-                                false => execute!(io::stdout(), Print(c))?,
+                    if key.kind == KeyEventKind::Press {
+                        match key.code {
+                            crossterm::event::KeyCode::Char(c) => {
+                                match self.settings.blind {
+                                    true => execute!(io::stdout(), MoveRight(1))?,
+                                    false => execute!(io::stdout(), Print(c))?,
+                                }
+                                // handle the counting of the correct or wrong characters
+
+                                //typed.push(c);
                             }
-                            // handle the counting of the correct or wrong characters
+                            crossterm::event::KeyCode::Backspace if self.settings.backspace => {
+                                //typed.pop();
+                                execute!(
+                                    io::stdout(),
+                                    MoveLeft(1),
+                                    Clear(ClearType::FromCursorDown)
+                                )?
+                            }
+                            crossterm::event::KeyCode::Enter => {
+                                // Any missing are also mistakes (extra chars are already counted when the characters were typed)
 
-                            typed.push(c);
+                                return Ok(true);
+                            }
+                            crossterm::event::KeyCode::Esc => {
+                                return Ok(false);
+                            }
+                            _ => {}
                         }
-                        crossterm::event::KeyCode::Backspace if self.settings.backspace => {
-                            typed.pop();
-                            execute!(io::stdout(), MoveLeft(1), Clear(ClearType::FromCursorDown))?
-                        }
-                        crossterm::event::KeyCode::Enter => {
-                            // Any missing are also mistakes (extra chars are already counted when the characters were typed)
-
-                            return Ok(true);
-                        }
-                        crossterm::event::KeyCode::Esc => {
-                            return Ok(false);
-                        }
-                        _ => {}
                     }
                 }
             } else if self.timer_expired() {

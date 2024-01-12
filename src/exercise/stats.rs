@@ -4,6 +4,8 @@ use chrono::{DateTime, Local};
 
 use serde::ser::{Serialize, SerializeStruct, Serializer};
 
+// Stats are created at the beginning of the exercise
+// and are changed during the exercise
 pub struct Stats {
     pub time: DateTime<Local>,
     pub start: Option<Instant>,
@@ -25,6 +27,11 @@ impl Stats {
             count_correct: 0,
             count_fault: 0,
         }
+    }
+
+    // Compare the typed character with the given prompt
+    pub fn compare_char(&self){
+
     }
 
     pub fn duration(&self) -> u64 {
