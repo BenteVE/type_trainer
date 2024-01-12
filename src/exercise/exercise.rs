@@ -47,14 +47,28 @@ impl Exercise {
                     self.quit()
                 }
                 KeyCode::Enter => {
+                    // Any missing are also mistakes (extra chars are already counted when the characters were typed)
+                    if self.prompt.chars().count() > self.typed.chars().count() {
+                        self.stats.count_fault +=
+                            self.prompt.chars().count() - self.typed.chars().count();
+                    }
                     self.next_prompt();
                     self.typed = String::new();
                 }
                 KeyCode::Char(c) => {
+                    if self.typed.len() + 1 > self.prompt.len()
+                        || self.prompt.chars().nth(self.typed.chars().count()).unwrap() != c
+                    {
+                        self.stats.count_fault += 1;
+                    } else {
+                        self.stats.count_correct += 1;
+                    }
                     self.typed.push(c);
                 }
                 KeyCode::Backspace => {
-                    self.typed.pop();
+                    if self.settings.backspace {
+                        self.typed.pop();
+                    }
                 }
 
                 _ => {}
