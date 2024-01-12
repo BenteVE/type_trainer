@@ -2,7 +2,7 @@ use ratatui::{
     layout::{Constraint, Direction, Layout},
     prelude::{Alignment, Frame},
     style::{Color, Style},
-    widgets::{Block, BorderType, Borders, Paragraph},
+    widgets::{Block, BorderType, Borders, Paragraph, Wrap},
 };
 
 use crate::exercise::exercise::Exercise;
@@ -38,12 +38,14 @@ pub fn render(exercise: &mut Exercise, f: &mut Frame) {
     );
     f.render_widget(
         Paragraph::new(format!("{}", exercise.prompt))
-            .block(Block::default().title("Prompt:").borders(Borders::ALL)),
+            .block(Block::default().title("Prompt:").borders(Borders::ALL))
+            .wrap(Wrap { trim: false }),
         layout[1],
     );
     f.render_widget(
         Paragraph::new(format!("{}", exercise.typed))
-            .block(Block::default().title("Typed:").borders(Borders::ALL)),
+            .block(Block::default().title("Typed:").borders(Borders::ALL))
+            .wrap(Wrap { trim: false }),
         layout[2],
     );
 }
