@@ -1,6 +1,14 @@
 use anyhow::{Ok, Result};
 use ratatui::{backend::CrosstermBackend, Terminal};
-use type_trainer::{exercise::exercise::Exercise, parser::Parser, ui::{event::{EventHandler, Event}, tui::Tui, update::update}};
+use type_trainer::{
+    exercise::exercise::Exercise,
+    parser::Parser,
+    ui::{
+        event::{Event, EventHandler},
+        tui::Tui,
+        update::update,
+    },
+};
 
 fn main() -> Result<()> {
     let matches = Parser::new();
@@ -15,8 +23,10 @@ fn main() -> Result<()> {
     let mut tui = Tui::new(terminal, events);
     tui.enter()?;
 
+    exercise.start();
+
     // Start the main loop.
-    while !exercise.should_quit {
+    while !exercise.should_quit() {
         // Render the user interface.
         tui.draw(&mut exercise)?;
         // Handle events.
@@ -30,5 +40,10 @@ fn main() -> Result<()> {
 
     // Exit the user interface.
     tui.exit()?;
+
+    println!("Print the serialized stats");
+    println!("{}", serde_json::to_string(&exercise.settings).unwrap());
+    println!("{}", serde_json::to_string(&exercise.stats).unwrap());
+
     Ok(())
 }

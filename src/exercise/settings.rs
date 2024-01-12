@@ -1,6 +1,5 @@
 use std::{path::PathBuf, time::Duration};
 
-use rand::Rng;
 use serde::ser::{Serialize, SerializeStruct, Serializer};
 
 use crate::exercise::split::Split;
@@ -28,26 +27,12 @@ impl Settings {
     ) -> Settings {
         Settings {
             file_path: file_path,
-
             split,
             prompts,
             duration,
             blind,
             backspace,
             random,
-        }
-    }
-
-    pub fn next_prompt(&self, prompt: usize) -> Option<usize> {
-        match self.random {
-            true => Some(rand::thread_rng().gen_range(0..self.prompts.len())),
-            false => {
-                if prompt >= self.prompts.len() {
-                    return Option::None;
-                } else {
-                    Some(prompt + 1)
-                }
-            }
         }
     }
 }
