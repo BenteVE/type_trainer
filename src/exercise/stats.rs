@@ -46,6 +46,15 @@ impl Stats {
             None => 0,
         }
     }
+
+    pub fn ratio(&self) -> u16{
+        let total = self.count_correct + self.count_fault;
+        if total == 0{
+            return 100 as u16;
+        }
+        let percent = self.count_correct as f64 / total as f64 * 100 as f64;
+        percent as u16
+    }
 }
 
 impl Serialize for Stats {

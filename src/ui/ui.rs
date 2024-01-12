@@ -2,7 +2,7 @@ use ratatui::{
     layout::{Constraint, Direction, Layout},
     prelude::{Alignment, Frame},
     style::{Color, Style, Stylize},
-    widgets::{Bar, BarChart, BarGroup, Block, BorderType, Borders, Padding, Paragraph, Wrap},
+    widgets::{Block, BorderType, Borders, Gauge, Padding, Paragraph, Wrap},
 };
 
 use crate::exercise::exercise::Exercise;
@@ -29,22 +29,10 @@ pub fn render(exercise: &mut Exercise, f: &mut Frame) {
     f.render_widget(screen, screen_area);
 
     f.render_widget(
-        BarChart::default()
-            .block(Block::default().title("Stats").borders(Borders::ALL))
-            .direction(Direction::Horizontal)
-            .label_style(Style::new().white())
-            .data(
-                BarGroup::default().bars(&[
-                    Bar::default()
-                        .value(exercise.stats.count_correct as u64)
-                        .label("Correct: ".into())
-                        .style(Style::default().fg(Color::Green)),
-                    Bar::default()
-                        .value(exercise.stats.count_fault as u64)
-                        .label("Faults:  ".into())
-                        .style(Style::default().fg(Color::Red)),
-                ]),
-            ),
+        Gauge::default()
+            .block(Block::default().borders(Borders::ALL).title("Ratio"))
+            .gauge_style(Style::default().fg(Color::LightGreen).bg(Color::LightRed))
+            .percent(exercise.stats.ratio()),
         inner[0],
     );
 
@@ -54,7 +42,7 @@ pub fn render(exercise: &mut Exercise, f: &mut Frame) {
                 Block::default()
                     .title("Prompt:")
                     .borders(Borders::ALL)
-                    .style(Style::default().fg(Color::Yellow))
+                    .style(Style::default().fg(Color::LightYellow))
                     .padding(Padding::uniform(1)),
             )
             .wrap(Wrap { trim: false }),
