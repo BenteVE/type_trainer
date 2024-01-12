@@ -42,8 +42,10 @@ impl Exercise {
     }
 
     pub fn should_quit(&mut self) -> bool {
-        // return true if false if the timer has expired
-        self.should_quit || self.timer_expired()
+        if self.timer_expired() {
+            self.quit();
+        }
+        self.should_quit
     }
 
     fn timer_expired(&self) -> bool {
