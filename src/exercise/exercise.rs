@@ -10,7 +10,7 @@ pub struct Exercise {
     pub stats: Stats,
     pub prompt: String, // store the current prompt
     pub typed: String,  // store whatever is typed for the current prompt
-    pub should_quit: bool,
+    should_quit: bool,
 }
 
 impl Exercise {
@@ -91,7 +91,7 @@ impl Exercise {
         }
     }
 
-    pub fn next_prompt(&mut self) {
+    fn next_prompt(&mut self) {
         match self.settings.random {
             true => {
                 self.prompt = self

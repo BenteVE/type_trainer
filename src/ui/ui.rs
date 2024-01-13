@@ -1,8 +1,10 @@
 use ratatui::{
     layout::{Constraint, Direction, Layout},
     prelude::{Alignment, Frame},
-    style::{Color, Style, Stylize},
-    widgets::{Block, BorderType, Borders, Gauge, Padding, Paragraph, Wrap},
+    style::{Color, Modifier, Style, Stylize},
+    symbols::{self, block::FULL},
+    text::{Line, Span},
+    widgets::{Block, BorderType, Borders, LineGauge, Padding, Paragraph, Wrap},
 };
 
 use crate::exercise::exercise::Exercise;
@@ -19,9 +21,11 @@ pub fn render(exercise: &mut Exercise, f: &mut Frame) {
     let inner = Layout::default()
         .direction(Direction::Vertical)
         .constraints(vec![
-            Constraint::Percentage(20),
-            Constraint::Percentage(40),
-            Constraint::Percentage(40),
+            Constraint::Length(3),
+            Constraint::Length(3),
+            Constraint::Max(10),
+            Constraint::Max(10),
+            Constraint::Min(0),
         ])
         .margin(2)
         .split(screen.inner(screen_area));
@@ -29,15 +33,47 @@ pub fn render(exercise: &mut Exercise, f: &mut Frame) {
     f.render_widget(screen, screen_area);
 
     f.render_widget(
-        Gauge::default()
-            .block(Block::default().borders(Borders::ALL).title("Ratio"))
-            .gauge_style(Style::default().fg(Color::LightGreen).bg(Color::LightRed))
-            .percent(exercise.stats.ratio()),
+        LineGauge::default()
+            .block(Block::default().borders(Borders::ALL).title("Progress"))
+            .gauge_style(Style::default().fg(Color::White).bg(Color::Black))
+            .ratio(exercise.stats.ratio())
+            .line_set(symbols::line::THICK),
         inner[0],
     );
 
     f.render_widget(
-        Paragraph::new(format!("{}", exercise.prompt))
+        LineGauge::default()
+            .block(Block::default().borders(Borders::ALL).title("Ratio"))
+            .gauge_style(Style::default().fg(Color::LightGreen).bg(Color::LightRed))
+            .ratio(exercise.stats.ratio())
+            .line_set(symbols::line::THICK),
+        inner[1],
+    );
+    let mut typed_styled: Vec<Span> = Vec::new();
+    let mut prompt_styled: Vec<Span> = Vec::new();
+
+    for (p, t) in exercise.prompt[..exercise.typed.len()]
+        .chars()
+        .zip(exercise.typed.chars())
+    {
+        if p == t {
+            typed_styled.push(Span::from(t.to_string()).bg(Color::Green));
+            prompt_styled.push(Span::from(p.to_string()).bg(Color::Green));
+        } else {
+            typed_styled.push(Span::from(t.to_string()).bg(Color::Red));
+            prompt_styled.push(Span::from(p.to_string()).bg(Color::Red));
+        }
+    }
+    let remaining = exercise.prompt.clone()[exercise.typed.chars().count()..].to_string();
+    prompt_styled.push(Span::from(remaining));
+
+    typed_styled.push(Span::styled(
+        FULL,
+        Style::default().add_modifier(Modifier::SLOW_BLINK),
+    ));
+
+    f.render_widget(
+        Paragraph::new(Line::from(prompt_styled))
             .block(
                 Block::default()
                     .title("Prompt:")
@@ -46,19 +82,18 @@ pub fn render(exercise: &mut Exercise, f: &mut Frame) {
                     .padding(Padding::uniform(1)),
             )
             .wrap(Wrap { trim: false }),
-        inner[1],
+        inner[2],
     );
 
     f.render_widget(
-        Paragraph::new(format!("{}", exercise.typed))
+        Paragraph::new(Line::from(typed_styled))
             .block(
                 Block::default()
                     .title("Typed:")
                     .borders(Borders::ALL)
                     .padding(Padding::uniform(1)),
             )
-            .not_rapid_blink()
             .wrap(Wrap { trim: false }),
-        inner[2],
+        inner[3],
     );
 }

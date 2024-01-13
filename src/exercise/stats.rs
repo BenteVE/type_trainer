@@ -32,9 +32,7 @@ impl Stats {
     }
 
     // Compare the typed character with the given prompt
-    pub fn compare_char(&self){
-
-    }
+    pub fn compare_char(&self) {}
 
     pub fn duration(&self) -> u64 {
         let duration = self
@@ -47,13 +45,11 @@ impl Stats {
         }
     }
 
-    pub fn ratio(&self) -> u16{
-        let total = self.count_correct + self.count_fault;
-        if total == 0{
-            return 100 as u16;
+    pub fn ratio(&self) -> f64 {
+        match self.count_correct + self.count_fault {
+            0 => 1 as f64,
+            total => self.count_correct as f64 / total as f64,
         }
-        let percent = self.count_correct as f64 / total as f64 * 100 as f64;
-        percent as u16
     }
 }
 
