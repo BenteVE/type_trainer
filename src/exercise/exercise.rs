@@ -26,7 +26,7 @@ impl Exercise {
     /// Handles the tick event of the terminal.
     pub fn tick(&self) {}
 
-    /// Start the exercise timer, select the first prompt
+    /// Start the exercise timer
     pub fn start(&mut self) {
         // start the exercise timer
         self.stats.start = Some(Instant::now());

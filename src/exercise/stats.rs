@@ -14,8 +14,6 @@ pub struct Stats {
     pub count_backspace: usize,
     pub count_correct: usize, // the characters do not need to be submitted for them to count
     pub count_fault: usize,
-    // record backspace presses
-    // record a hashmap with each prompt char to a set of chars it was mistaken for
 }
 
 impl Stats {

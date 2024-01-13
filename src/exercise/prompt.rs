@@ -67,6 +67,7 @@ impl Prompt {
         self.set_prompt();
     }
 
+    /// THIS FUNCTION NEEDS TO QUIT IF THERE ARE NO MORE PROMPTS AVAILABLE
     fn select_next_prompt(&mut self) {
         match self.random {
             true => self.prompts_index = rand::thread_rng().gen_range(0..self.prompts.len()),
