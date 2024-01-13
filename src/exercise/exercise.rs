@@ -1,25 +1,24 @@
 use crossterm::event::{KeyCode, KeyEvent, KeyEventKind, KeyModifiers};
-use rand::seq::SliceRandom;
 
 use crate::exercise::{settings::Settings, stats::Stats};
 
 use std::time::Instant;
 
+use super::prompt::Prompt;
+
 pub struct Exercise {
     pub settings: Settings,
+    pub prompt: Prompt,
     pub stats: Stats,
-    pub prompt: String, // store the current prompt
-    pub typed: String,  // store whatever is typed for the current prompt
     should_quit: bool,
 }
 
 impl Exercise {
-    pub fn build(settings: Settings) -> Exercise {
+    pub fn build(settings: Settings, prompt: Prompt) -> Exercise {
         Exercise {
             settings,
+            prompt: prompt,
             stats: Stats::new(),
-            prompt: String::new(),
-            typed: String::new(),
             should_quit: false,
         }
     }
@@ -31,9 +30,6 @@ impl Exercise {
     pub fn start(&mut self) {
         // start the exercise timer
         self.stats.start = Some(Instant::now());
-
-        // select the first prompt
-        self.next_prompt();
     }
 
     pub fn update(&mut self, key_event: KeyEvent) {
@@ -53,21 +49,17 @@ impl Exercise {
         }
     }
 
-    // This function should work differently when the split is text
     fn press_enter(&mut self) {
+        // THIS SHOULD BE CHANGED BECAUSE FOR A TEXT, THE MISSING COUNTS AREN'T NECESSARILY FAULTS
+        self.stats.count_fault += self.prompt.count_missing();
+        self.prompt.handle_enter();
         self.stats.count_enter += 1;
-        // Any missing are also mistakes (extra chars are already counted when the characters were typed)
-        if self.prompt.chars().count() > self.typed.chars().count() {
-            self.stats.count_fault += self.prompt.chars().count() - self.typed.chars().count();
-        }
-        self.next_prompt();
-        self.typed = String::new();
     }
 
     fn press_backspace(&mut self) {
         match self.settings.backspace {
             true => {
-                self.typed.pop();
+                self.prompt.remove_char();
                 self.stats.count_backspace += 1;
             }
             false => {}
@@ -75,40 +67,9 @@ impl Exercise {
     }
 
     fn press_char(&mut self, c: char) {
-        match c == self.correct_char() {
+        match self.prompt.type_char(c) {
             true => self.stats.count_correct += 1,
             false => self.stats.count_fault += 1,
-        }
-        self.typed.push(c);
-    }
-
-    /// Returns the character that is supposed to be pressed at any given time
-    fn correct_char(&self) -> char {
-        if self.typed.len() + 1 > self.prompt.len() {
-            return '\n';
-        } else {
-            return self.prompt.chars().nth(self.typed.chars().count()).unwrap();
-        }
-    }
-
-    fn next_prompt(&mut self) {
-        match self.settings.random {
-            true => {
-                self.prompt = self
-                    .settings
-                    .prompts
-                    .choose(&mut rand::thread_rng())
-                    .unwrap()
-                    .clone()
-            }
-            false => {
-                if self.stats.count_enter >= self.settings.prompts.len() {
-                    self.quit();
-                    return;
-                } else {
-                    self.prompt = self.settings.prompts[self.stats.count_enter].clone();
-                }
-            }
         }
     }
 

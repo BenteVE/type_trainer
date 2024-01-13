@@ -11,9 +11,10 @@ use type_trainer::{
 
 fn main() -> Result<()> {
     let matches = Parser::new();
-    let settings = Parser::parse(matches)?;
+    let settings = Parser::get_settings(&matches)?;
+    let prompt = Parser::get_prompt(&matches)?;
 
-    let mut exercise = Exercise::build(settings);
+    let mut exercise = Exercise::build(settings, prompt);
 
     // Initialize the terminal user interface.
     let backend = CrosstermBackend::new(std::io::stderr());
@@ -45,6 +46,7 @@ fn main() -> Result<()> {
     tui.exit()?;
 
     println!("Print the serialized stats");
+    println!("{}", serde_json::to_string(&exercise.prompt).unwrap());
     println!("{}", serde_json::to_string(&exercise.settings).unwrap());
     println!("{}", serde_json::to_string(&exercise.stats).unwrap());
 

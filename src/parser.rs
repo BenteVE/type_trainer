@@ -1,6 +1,6 @@
 use std::{fs, path::PathBuf, time::Duration};
 
-use crate::exercise::{settings::Settings, split::Split};
+use crate::exercise::{prompt::Prompt, settings::Settings, split::Split};
 use clap::{command, value_parser, Arg, ArgAction, ArgMatches};
 
 use anyhow::{anyhow, Result};
@@ -61,7 +61,7 @@ impl Parser {
     }
 
     // parse the command line arguments to create the settings
-    pub fn parse(matches: ArgMatches) -> Result<Settings> {
+    pub fn get_prompt(matches: &ArgMatches) -> Result<Prompt> {
         let path = matches
             .get_one::<PathBuf>("path")
             .expect("Path is required");
@@ -82,23 +82,19 @@ impl Parser {
                     .expect("An invalid path should be caught when we read the file to a string")
             ));
         }
+        let random = matches.get_flag("random");
 
+        Ok(Prompt::build(path.to_owned(), split, random, prompts))
+    }
+
+    // parse the command line arguments to create the settings
+    pub fn get_settings(matches: &ArgMatches) -> Result<Settings> {
         let duration = match matches.get_one::<u16>("duration") {
             Some(d) => Some(Duration::from_secs(*d as u64)),
             None => Option::None,
         };
         let blind = matches.get_flag("blind");
         let backspace = matches.get_flag("backspace");
-        let random = matches.get_flag("random");
-
-        Ok(Settings::build(
-            path.to_owned(),
-            split,
-            prompts,
-            duration,
-            blind,
-            backspace,
-            random,
-        ))
+        Ok(Settings::build(duration, blind, backspace))
     }
 }

@@ -49,24 +49,32 @@ pub fn render(exercise: &mut Exercise, f: &mut Frame) {
             .line_set(symbols::line::THICK),
         inner[1],
     );
-    let mut typed_styled: Vec<Span> = Vec::new();
+
+    // change the colors of the paragraph
     let mut prompt_styled: Vec<Span> = Vec::new();
 
-    for (p, t) in exercise.prompt[..exercise.typed.len()]
-        .chars()
-        .zip(exercise.typed.chars())
-    {
-        if p == t {
-            typed_styled.push(Span::from(t.to_string()).bg(Color::Green));
-            prompt_styled.push(Span::from(p.to_string()).bg(Color::Green));
+    for i in 0..exercise.prompt.orig.len() {
+        if i < exercise.prompt.copy.len() {
+            match exercise.prompt.orig[i] == exercise.prompt.copy[i] {
+                true => prompt_styled
+                    .push(Span::from(exercise.prompt.orig[i].to_string()).bg(Color::Green)),
+                false => prompt_styled
+                    .push(Span::from(exercise.prompt.orig[i].to_string()).bg(Color::Red)),
+            };
         } else {
-            typed_styled.push(Span::from(t.to_string()).bg(Color::Red));
-            prompt_styled.push(Span::from(p.to_string()).bg(Color::Red));
+            prompt_styled.push(Span::from(exercise.prompt.orig[i].to_string()));
         }
     }
-    let remaining = exercise.prompt.clone()[exercise.typed.chars().count()..].to_string();
-    prompt_styled.push(Span::from(remaining));
 
+    // ADD EXTRA RED SPACES FOR EACH CHAR THAT PROMPT IS LONGER THAN TYPED
+
+    // change the colors of the typed text
+    let mut typed_styled: Vec<Span> = Vec::new();
+    for i in 0..exercise.prompt.copy.len() {
+        typed_styled.push(Span::from(exercise.prompt.copy[i].to_string()));
+    }
+
+    // Add a cursor
     typed_styled.push(Span::styled(
         FULL,
         Style::default().add_modifier(Modifier::SLOW_BLINK),
