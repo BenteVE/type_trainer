@@ -1,9 +1,11 @@
 use std::{fs, path::PathBuf, time::Duration};
 
-use crate::exercise::{exercise::Exercise, settings::Settings, split::Split, timer::Timer};
+use crate::exercise::{
+    content::Content, exercise::Exercise, settings::Settings, split::Split, timer::Timer,
+};
 use clap::{command, value_parser, Arg, ArgAction, ArgMatches};
 
-use anyhow::{anyhow, Result};
+use anyhow::{anyhow, Ok, Result};
 
 pub struct Parser;
 
@@ -25,7 +27,27 @@ impl Parser {
                     .required(true)
                     .value_parser(value_parser!(Split)),
             )
-            // Stats
+            // random and start should not exist together
+            // remove split option argument text (long texts can't be show anyway)
+            // instead: show 0..=10 lines in the prompt => (for random, we should select multiple lines at the same time?)
+            // whenever enter is pressed, we should remove 1 line
+            // change random to just shuffle the vector instead of keep selecting the lines?
+            .arg(
+                Arg::new("start")
+                    .long("start")
+                    .short('s')
+                    .help("Allows you to select the line to start at")
+                    .required(false)
+                    .action(ArgAction::Set)
+                    .value_parser(value_parser!(u32).range(0..)),
+            )
+            .arg(
+                Arg::new("random")
+                    .short('r')
+                    .help("Give the prompts in random order instead of consecutive order")
+                    .required(false)
+                    .action(ArgAction::SetTrue),
+            )
             .arg(
                 Arg::new("duration")
                     .long("duration")
@@ -51,13 +73,6 @@ impl Parser {
                     .action(ArgAction::SetFalse),
             )
             .arg(
-                Arg::new("random")
-                    .short('r')
-                    .help("Give the prompts in random order instead of consecutive order")
-                    .required(false)
-                    .action(ArgAction::SetTrue),
-            )
-            .arg(
                 Arg::new("marker")
                     .short('m')
                     .help("Mark the correct chars in green and the mistakes in red")
@@ -69,6 +84,14 @@ impl Parser {
 
     // parse the command line arguments to create the settings
     pub fn get_exercise(matches: &ArgMatches) -> Result<Exercise> {
+        let timer = Self::get_timer(matches)?;
+        let content = Self::get_content(matches)?;
+        let settings = Self::get_settings(matches)?;
+
+        Ok(Exercise::build(timer, content, settings))
+    }
+
+    pub fn get_content(matches: &ArgMatches) -> Result<Content> {
         let path = matches
             .get_one::<PathBuf>("path")
             .expect("Path is required");
@@ -80,9 +103,9 @@ impl Parser {
             .expect("'split' is required and parsing will fail if its missing")
             .to_owned();
 
-        let contents = split.into_prompts(content);
+        let content = split.into_prompts(content);
 
-        if contents.is_empty() {
+        if content.is_empty() {
             return Err(anyhow!(
                 "Could't create any prompts from the file at {}",
                 path.to_str()
@@ -90,26 +113,34 @@ impl Parser {
             ));
         }
 
-        let timer = Self::get_timer(matches)?;
-        let settings = Self::get_settings(matches)?;
+        let start = match matches.get_one::<u32>("start") {
+            Some(index) => *index,
+            None => 0,
+        } as usize;
 
-        Ok(Exercise::build(
-            timer,
-            settings,
+        /// Pass a slice of contents instead of start
+        if start >= content.len() {
+            return Err(anyhow!("Index out of bounds: {}", start));
+        }
+
+        let random = matches.get_flag("random");
+
+        Ok(Content::build(
             path.to_owned(),
             split,
-            contents,
+            content,
+            random,
+            start,
         ))
     }
 
     // parse the command line arguments to create the settings
     pub fn get_settings(matches: &ArgMatches) -> Result<Settings> {
         let backspace = matches.get_flag("backspace");
-        let random = matches.get_flag("random");
         let marker = matches.get_flag("marker");
         let blind = matches.get_flag("blind");
 
-        Ok(Settings::build(backspace, random, marker, blind))
+        Ok(Settings::build(backspace, marker, blind))
     }
 
     pub fn get_timer(matches: &ArgMatches) -> Result<Timer> {

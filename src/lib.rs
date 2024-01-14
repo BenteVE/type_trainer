@@ -1,6 +1,7 @@
 pub mod parser;
 
 pub mod exercise {
+    pub mod content;
     pub mod exercise;
     pub mod prompt;
     pub mod settings;

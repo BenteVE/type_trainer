@@ -1,23 +1,17 @@
 use chrono::{DateTime, Local};
 use crossterm::event::{KeyCode, KeyEvent, KeyEventKind, KeyModifiers};
-use rand::{thread_rng, Rng};
+
 use serde::ser::{Serialize, SerializeStruct, Serializer};
 
 use crate::exercise::settings::Settings;
 
-use std::path::PathBuf;
-
-use super::{prompt::Prompt, split::Split, timer::Timer};
+use super::{content::Content, prompt::Prompt, split::Split, timer::Timer};
 
 pub struct Exercise {
     pub time: DateTime<Local>,
-    pub file_path: PathBuf,
-    pub contents: Vec<String>,
-    pub contents_index: usize,
-
-    pub split: Split,
 
     pub timer: Timer,
+    pub content: Content,
     pub settings: Settings,
     pub prompt: Prompt,
 
@@ -25,32 +19,21 @@ pub struct Exercise {
 }
 
 impl Exercise {
-    pub fn build(
-        timer: Timer,
-        settings: Settings,
-        file_path: PathBuf,
-        split: Split,
-        contents: Vec<String>,
-    ) -> Exercise {
-        let mut exercise = Exercise {
+    pub fn build(timer: Timer, content: Content, settings: Settings) -> Exercise {
+        // SET THE FIRST PROMPT!
+        let prompt = Prompt::new(
+            content
+                .get_prompt()
+                .expect("The program will not start if there is no content"),
+        );
+        Exercise {
             time: Local::now(),
             timer,
-            prompt: Prompt::new(),
+            prompt: prompt,
             settings,
-
-            file_path,
-            split,
-            contents,
-            contents_index: 0,
-
             should_quit: false,
-        };
-
-        exercise.select_first_prompt();
-        let prompt_chars = exercise.create_prompt();
-        exercise.prompt.next(prompt_chars);
-
-        exercise
+            content,
+        }
     }
 
     /// Handles the tick event of the terminal.
@@ -73,36 +56,17 @@ impl Exercise {
         }
     }
 
-    fn select_first_prompt(&mut self) {
-        match self.settings.random {
-            true => self.contents_index = thread_rng().gen_range(0..self.contents.len()),
-            false => self.contents_index = 0,
-        };
-    }
-
-    fn select_next_prompt(&mut self) {
-        match self.settings.random {
-            true => self.contents_index = thread_rng().gen_range(0..self.contents.len()),
-            false => self.contents_index += 1,
-        };
-    }
-
-    fn create_prompt(&mut self) -> Vec<char> {
-        if let Some(string) = self.contents.get(self.contents_index) {
-            string.chars().collect()
-        } else {
-            self.quit();
-            Vec::new()
-        }
-    }
-
     fn press_enter(&mut self) {
-        if self.split == Split::Text {
+        if self.content.split == Split::Text {
         } else {
             self.prompt.finish();
-            self.select_next_prompt();
-            let prompt_chars = self.create_prompt();
-            self.prompt.next(prompt_chars);
+            
+            self.content.next_prompt();
+            if let Some(p) = self.content.get_prompt() {
+                self.prompt.set(p);
+            } else {
+                self.quit();
+            }
         }
     }
 
@@ -138,8 +102,9 @@ impl Serialize for Exercise {
         let mut state = serializer.serialize_struct("Exercise", 3)?;
         state.serialize_field("date", &self.time.to_rfc2822())?;
         state.serialize_field("timer", &self.timer)?;
-        state.serialize_field("stats", &self.prompt)?;
+        state.serialize_field("content", &self.content)?;
         state.serialize_field("settings", &self.settings)?;
+        state.serialize_field("stats", &self.prompt)?;
         state.end()
     }
 }

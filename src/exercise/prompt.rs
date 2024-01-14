@@ -9,9 +9,9 @@ pub struct Prompt {
 }
 
 impl Prompt {
-    pub fn new() -> Prompt {
+    pub fn new(prompt: Vec<char>) -> Prompt {
         Prompt {
-            prompt: Vec::new(),
+            prompt: prompt,
             typed: Vec::new(),
             count_backspace: 0,
             count_correct: 0,
@@ -23,10 +23,9 @@ impl Prompt {
         self.count_fault += self.count_missing();
         self.prompt = Vec::new();
         self.typed = Vec::new();
-        
     }
 
-    pub fn next(&mut self, prompt: Vec<char>){
+    pub fn set(&mut self, prompt: Vec<char>) {
         self.prompt = prompt;
     }
 
