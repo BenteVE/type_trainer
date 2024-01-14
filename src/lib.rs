@@ -5,7 +5,6 @@ pub mod exercise {
     pub mod exercise;
     pub mod prompt;
     pub mod settings;
-    pub mod split;
     pub mod timer;
 }
 

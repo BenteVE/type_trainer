@@ -1,11 +1,10 @@
 use std::{fs, path::PathBuf, time::Duration};
 
-use crate::exercise::{
-    content::Content, exercise::Exercise, settings::Settings, split::Split, timer::Timer,
-};
+use crate::exercise::{content::Content, exercise::Exercise, settings::Settings, timer::Timer};
 use clap::{command, value_parser, Arg, ArgAction, ArgMatches};
 
 use anyhow::{anyhow, Ok, Result};
+use rand::{seq::SliceRandom, thread_rng};
 
 pub struct Parser;
 
@@ -19,32 +18,44 @@ impl Parser {
                     .required(true)
                     .value_parser(value_parser!(PathBuf)),
             )
-            // Determine how to split the content of the file into prompts
-            .arg(
-                Arg::new("split")
-                    .index(2)
-                    .help("Determines how to split the contents of the file into prompts")
-                    .required(true)
-                    .value_parser(value_parser!(Split)),
-            )
             // random and start should not exist together
             // remove split option argument text (long texts can't be show anyway)
             // instead: show 0..=10 lines in the prompt => (for random, we should select multiple lines at the same time?)
             // whenever enter is pressed, we should remove 1 line
             // change random to just shuffle the vector instead of keep selecting the lines?
+            // Pro: progress bar would work
+            // Con: could take a long time for long texts (need extra crate)
             .arg(
                 Arg::new("start")
                     .long("start")
                     .short('s')
-                    .help("Allows you to select the line to start at")
+                    .help("Determines the line to start at")
                     .required(false)
                     .action(ArgAction::Set)
                     .value_parser(value_parser!(u32).range(0..)),
             )
             .arg(
+                Arg::new("lines")
+                    .long("lines")
+                    .short('l')
+                    .help("Limit the amount of lines that are prompted.")
+                    .required(false)
+                    .action(ArgAction::Set)
+                    .value_parser(value_parser!(u32).range(1..)),
+            )
+            .arg(
                 Arg::new("random")
+                    .long("random")
                     .short('r')
-                    .help("Give the prompts in random order instead of consecutive order")
+                    .help("Shuffle the prompts in a random order.")
+                    .required(false)
+                    .action(ArgAction::SetTrue),
+            )
+            .arg(
+                Arg::new("words")
+                    .long("words")
+                    .short('w')
+                    .help("Split every word of the text.")
                     .required(false)
                     .action(ArgAction::SetTrue),
             )
@@ -97,15 +108,11 @@ impl Parser {
             .expect("Path is required");
 
         let content = fs::read_to_string(path)?;
+        let words = matches.get_flag("words");
 
-        let split = matches
-            .get_one::<Split>("split")
-            .expect("'split' is required and parsing will fail if its missing")
-            .to_owned();
+        let mut prompts = Content::into_prompts(content, words);
 
-        let content = split.into_prompts(content);
-
-        if content.is_empty() {
+        if prompts.is_empty() {
             return Err(anyhow!(
                 "Could't create any prompts from the file at {}",
                 path.to_str()
@@ -113,23 +120,31 @@ impl Parser {
             ));
         }
 
-        let start = match matches.get_one::<u32>("start") {
-            Some(start) => *start as usize,
-            None => 0,
+        // Start at the given line
+        if let Some(start) = matches.get_one::<u32>("start") {
+            let start = *start as usize;
+            if start >= prompts.len() {
+                return Err(anyhow!("Starting value {} results in 0 prompts", start));
+            } else {
+                prompts = prompts[start..].to_vec();
+            }
         };
 
-        if start >= content.len() {
-            return Err(anyhow!("Starting value {} results in 0 prompts", start));
+        // Shorten the amount of lines if necessary
+        if let Some(lines) = matches.get_one::<u32>("lines") {
+            let lines = *lines as usize;
+            if lines < prompts.len() {
+                prompts = prompts[..lines].to_vec();
+            }
         }
 
+        // Shuffle the prompts if necessary
         let random = matches.get_flag("random");
+        if random {
+            prompts.shuffle(&mut thread_rng())
+        }
 
-        Ok(Content::build(
-            path.to_owned(),
-            split,
-            content[start..].to_vec(),
-            random,
-        ))
+        Ok(Content::build(path.to_owned(), prompts, random, words))
     }
 
     // parse the command line arguments to create the settings

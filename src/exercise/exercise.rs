@@ -5,7 +5,7 @@ use serde::ser::{Serialize, SerializeStruct, Serializer};
 
 use crate::exercise::settings::Settings;
 
-use super::{content::Content, prompt::Prompt, split::Split, timer::Timer};
+use super::{content::Content, prompt::Prompt, timer::Timer};
 
 pub struct Exercise {
     pub time: DateTime<Local>,
@@ -57,16 +57,13 @@ impl Exercise {
     }
 
     fn press_enter(&mut self) {
-        if self.content.split == Split::Text {
+        self.prompt.finish();
+
+        self.content.next_prompt();
+        if let Some(p) = self.content.get_prompt() {
+            self.prompt.set(p);
         } else {
-            self.prompt.finish();
-            
-            self.content.next_prompt();
-            if let Some(p) = self.content.get_prompt() {
-                self.prompt.set(p);
-            } else {
-                self.quit();
-            }
+            self.quit();
         }
     }
 

@@ -73,6 +73,7 @@ pub fn render(exercise: &mut Exercise, f: &mut Frame) {
         Style::default().add_modifier(Modifier::SLOW_BLINK),
     ));
 
+    // Show the line the user is currently typing with highlighting
     f.render_widget(
         Paragraph::new(Line::from(prompt_styled))
             .block(
@@ -85,6 +86,13 @@ pub fn render(exercise: &mut Exercise, f: &mut Frame) {
             .wrap(Wrap { trim: false }),
         inner[2],
     );
+    
+
+    // Show the next lines the user should type after the current one.
+    // This text should be a little dim and should take up all the space that is left 
+
+
+    // Show the line the user is typing
 
     f.render_widget(
         Paragraph::new(Line::from(typed_styled))
