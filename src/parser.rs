@@ -114,13 +114,12 @@ impl Parser {
         }
 
         let start = match matches.get_one::<u32>("start") {
-            Some(index) => *index,
+            Some(start) => *start as usize,
             None => 0,
-        } as usize;
+        };
 
-        /// Pass a slice of contents instead of start
         if start >= content.len() {
-            return Err(anyhow!("Index out of bounds: {}", start));
+            return Err(anyhow!("Starting value {} results in 0 prompts", start));
         }
 
         let random = matches.get_flag("random");
@@ -128,9 +127,8 @@ impl Parser {
         Ok(Content::build(
             path.to_owned(),
             split,
-            content,
+            content[start..].to_vec(),
             random,
-            start,
         ))
     }
 

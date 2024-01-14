@@ -18,7 +18,7 @@ pub struct Content {
 }
 
 impl Content {
-    pub fn build(file_path: PathBuf, split: Split, content: Vec<String>, random: bool, index: usize) -> Content {
+    pub fn build(file_path: PathBuf, split: Split, content: Vec<String>, random: bool) -> Content {
         Content {
             file_path,
             content,
@@ -33,11 +33,6 @@ impl Content {
             true => self.prompt_index = thread_rng().gen_range(0..self.content.len()),
             false => self.prompt_index += 1,
         };
-    }
-
-    /// Later implement starting at a certain line in a long text
-    fn set_prompt(&mut self, index: usize) {
-        self.prompt_index = index;
     }
 
     pub fn get_prompt(&self) -> Option<Vec<char>> {
