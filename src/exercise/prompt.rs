@@ -1,90 +1,66 @@
-use std::path::PathBuf;
-
-use rand::Rng;
 use serde::ser::{Serialize, SerializeStruct, Serializer};
 
-use super::split::Split;
-
 pub struct Prompt {
-    pub file_path: PathBuf,
-    pub split: Split,
-    pub random: bool,
-
-    pub prompts: Vec<String>,
-    pub prompts_index: usize, // the index of the current prompt
-
-    pub orig: Vec<char>,
-    pub copy: Vec<char>,
+    pub prompt: Vec<char>,
+    pub typed: Vec<char>,
+    pub count_backspace: usize,
+    pub count_correct: usize, // the characters do not need to be submitted for them to count
+    pub count_fault: usize,
 }
 
 impl Prompt {
-    pub fn build(file_path: PathBuf, split: Split, random: bool, prompts: Vec<String>) -> Prompt {
-        let first_prompt = match random {
-            true => rand::thread_rng().gen_range(0..prompts.len()),
-            false => 0,
-        };
-        let mut prompt = Prompt {
-            file_path,
-            split,
-            random,
-            prompts,
-            prompts_index: first_prompt,
-            orig: Vec::new(),
-            copy: Vec::new(),
-        };
-        prompt.set_prompt();
-        prompt
+    pub fn new() -> Prompt {
+        Prompt {
+            prompt: Vec::new(),
+            typed: Vec::new(),
+            count_backspace: 0,
+            count_correct: 0,
+            count_fault: 0,
+        }
+    }
+
+    pub fn finish(&mut self) {
+        self.count_fault += self.count_missing();
+        self.prompt = Vec::new();
+        self.typed = Vec::new();
+        
+    }
+
+    pub fn next(&mut self, prompt: Vec<char>){
+        self.prompt = prompt;
+    }
+
+    pub fn count_missing(&self) -> usize {
+        if self.prompt.len() > self.typed.len() {
+            self.prompt.len() - self.typed.len()
+        } else {
+            0
+        }
+    }
+
+    pub fn ratio(&self) -> f64 {
+        match self.count_correct + self.count_fault {
+            0 => 1 as f64,
+            total => self.count_correct as f64 / total as f64,
+        }
     }
 
     /// Return if the character was correct
-    pub fn type_char(&mut self, c: char) -> bool {
-        let index = self.copy.len();
-        self.copy.push(c);
+    pub fn type_char(&mut self, c: char) {
+        let index = self.typed.len();
+        self.typed.push(c);
 
-        match index >= self.orig.len() {
-            true => false,
-            false => c == self.orig[index],
+        if index < self.prompt.len() && c == self.prompt[index] {
+            self.count_correct += 1;
+        } else {
+            self.count_fault += 1;
         }
     }
 
     pub fn remove_char(&mut self) {
-        if self.copy.len() > 0 {
-            self.copy.pop();
-        }
-    }
-
-    pub fn handle_enter(&mut self) {
-        match self.split {
-            Split::Text => todo!(),
-            _ => {
-                self.next_prompt();
-            }
-        }
-    }
-
-    fn next_prompt(&mut self) {
-        self.select_next_prompt();
-        self.set_prompt();
-    }
-
-    /// THIS FUNCTION NEEDS TO QUIT IF THERE ARE NO MORE PROMPTS AVAILABLE
-    fn select_next_prompt(&mut self) {
-        match self.random {
-            true => self.prompts_index = rand::thread_rng().gen_range(0..self.prompts.len()),
-            false => self.prompts_index += 1,
-        }
-    }
-
-    fn set_prompt(&mut self) {
-        self.orig = self.prompts[self.prompts_index].chars().collect();
-        self.copy = Vec::new();
-    }
-
-    pub fn count_missing(&self) -> usize {
-        if self.orig.len() > self.copy.len() {
-            self.orig.len() - self.copy.len()
-        } else {
-            0
+        if self.typed.len() > 0 {
+            self.typed.pop();
+            self.count_backspace += 1;
         }
     }
 }
@@ -95,9 +71,9 @@ impl Serialize for Prompt {
         S: Serializer,
     {
         let mut state = serializer.serialize_struct("Settings", 5)?;
-        state.serialize_field("file", &self.file_path.file_name().unwrap().to_str())?;
-        state.serialize_field("split", &self.split.to_string())?;
-        state.serialize_field("random", &self.random)?;
+        state.serialize_field("count_backspace", &self.count_backspace)?;
+        state.serialize_field("count_correct", &self.count_correct)?;
+        state.serialize_field("count_fault", &self.count_fault)?;
         state.end()
     }
 }

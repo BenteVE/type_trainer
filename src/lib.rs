@@ -2,10 +2,10 @@ pub mod parser;
 
 pub mod exercise {
     pub mod exercise;
+    pub mod prompt;
     pub mod settings;
     pub mod split;
-    pub mod stats;
-    pub mod prompt;
+    pub mod timer;
 }
 
 pub mod ui {

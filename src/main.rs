@@ -1,7 +1,6 @@
 use anyhow::{Ok, Result};
 use ratatui::{backend::CrosstermBackend, Terminal};
 use type_trainer::{
-    exercise::exercise::Exercise,
     parser::Parser,
     ui::{
         event::{Event, EventHandler},
@@ -11,21 +10,19 @@ use type_trainer::{
 
 fn main() -> Result<()> {
     let matches = Parser::new();
-    let settings = Parser::get_settings(&matches)?;
-    let prompt = Parser::get_prompt(&matches)?;
 
-    let mut exercise = Exercise::build(settings, prompt);
+    let mut exercise = Parser::get_exercise(&matches)?;
 
     // Initialize the terminal user interface.
     let backend = CrosstermBackend::new(std::io::stderr());
     let terminal = Terminal::new(backend)?;
     let events = EventHandler::new(250);
+
     let mut tui = Tui::new(terminal, events);
     tui.enter()?;
 
     // Do a countdown
-
-    exercise.start();
+    exercise.timer.start();
 
     // Start the main loop.
     while !exercise.should_quit() {
@@ -46,9 +43,7 @@ fn main() -> Result<()> {
     tui.exit()?;
 
     println!("Print the serialized stats");
-    println!("{}", serde_json::to_string(&exercise.prompt).unwrap());
-    println!("{}", serde_json::to_string(&exercise.settings).unwrap());
-    println!("{}", serde_json::to_string(&exercise.stats).unwrap());
+    println!("{}", serde_json::to_string(&exercise).unwrap());
 
     Ok(())
 }

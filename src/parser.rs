@@ -1,6 +1,6 @@
 use std::{fs, path::PathBuf, time::Duration};
 
-use crate::exercise::{prompt::Prompt, settings::Settings, split::Split};
+use crate::exercise::{exercise::Exercise, settings::Settings, split::Split, timer::Timer};
 use clap::{command, value_parser, Arg, ArgAction, ArgMatches};
 
 use anyhow::{anyhow, Result};
@@ -57,11 +57,18 @@ impl Parser {
                     .required(false)
                     .action(ArgAction::SetTrue),
             )
+            .arg(
+                Arg::new("marker")
+                    .short('m')
+                    .help("Mark the correct chars in green and the mistakes in red")
+                    .required(false)
+                    .action(ArgAction::SetFalse),
+            )
             .get_matches()
     }
 
     // parse the command line arguments to create the settings
-    pub fn get_prompt(matches: &ArgMatches) -> Result<Prompt> {
+    pub fn get_exercise(matches: &ArgMatches) -> Result<Exercise> {
         let path = matches
             .get_one::<PathBuf>("path")
             .expect("Path is required");
@@ -73,28 +80,43 @@ impl Parser {
             .expect("'split' is required and parsing will fail if its missing")
             .to_owned();
 
-        let prompts = split.into_prompts(content);
+        let contents = split.into_prompts(content);
 
-        if prompts.is_empty() {
+        if contents.is_empty() {
             return Err(anyhow!(
                 "Could't create any prompts from the file at {}",
                 path.to_str()
                     .expect("An invalid path should be caught when we read the file to a string")
             ));
         }
-        let random = matches.get_flag("random");
 
-        Ok(Prompt::build(path.to_owned(), split, random, prompts))
+        let timer = Self::get_timer(matches)?;
+        let settings = Self::get_settings(matches)?;
+
+        Ok(Exercise::build(
+            timer,
+            settings,
+            path.to_owned(),
+            split,
+            contents,
+        ))
     }
 
     // parse the command line arguments to create the settings
     pub fn get_settings(matches: &ArgMatches) -> Result<Settings> {
+        let backspace = matches.get_flag("backspace");
+        let random = matches.get_flag("random");
+        let marker = matches.get_flag("marker");
+        let blind = matches.get_flag("blind");
+
+        Ok(Settings::build(backspace, random, marker, blind))
+    }
+
+    pub fn get_timer(matches: &ArgMatches) -> Result<Timer> {
         let duration = match matches.get_one::<u16>("duration") {
             Some(d) => Some(Duration::from_secs(*d as u64)),
             None => Option::None,
         };
-        let blind = matches.get_flag("blind");
-        let backspace = matches.get_flag("backspace");
-        Ok(Settings::build(duration, blind, backspace))
+        Ok(Timer::new(duration))
     }
 }

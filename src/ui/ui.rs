@@ -36,7 +36,7 @@ pub fn render(exercise: &mut Exercise, f: &mut Frame) {
         LineGauge::default()
             .block(Block::default().borders(Borders::ALL).title("Progress"))
             .gauge_style(Style::default().fg(Color::White).bg(Color::Black))
-            .ratio(exercise.stats.ratio())
+            .ratio(exercise.prompt.ratio())
             .line_set(symbols::line::THICK),
         inner[0],
     );
@@ -45,7 +45,7 @@ pub fn render(exercise: &mut Exercise, f: &mut Frame) {
         LineGauge::default()
             .block(Block::default().borders(Borders::ALL).title("Ratio"))
             .gauge_style(Style::default().fg(Color::LightGreen).bg(Color::LightRed))
-            .ratio(exercise.stats.ratio())
+            .ratio(exercise.prompt.ratio())
             .line_set(symbols::line::THICK),
         inner[1],
     );
@@ -53,16 +53,16 @@ pub fn render(exercise: &mut Exercise, f: &mut Frame) {
     // change the colors of the paragraph
     let mut prompt_styled: Vec<Span> = Vec::new();
 
-    for i in 0..exercise.prompt.orig.len() {
-        if i < exercise.prompt.copy.len() {
-            match exercise.prompt.orig[i] == exercise.prompt.copy[i] {
+    for i in 0..exercise.prompt.prompt.len() {
+        if i < exercise.prompt.typed.len() {
+            match exercise.prompt.prompt[i] == exercise.prompt.typed[i] {
                 true => prompt_styled
-                    .push(Span::from(exercise.prompt.orig[i].to_string()).bg(Color::Green)),
+                    .push(Span::from(exercise.prompt.prompt[i].to_string()).bg(Color::Green)),
                 false => prompt_styled
-                    .push(Span::from(exercise.prompt.orig[i].to_string()).bg(Color::Red)),
+                    .push(Span::from(exercise.prompt.prompt[i].to_string()).bg(Color::Red)),
             };
         } else {
-            prompt_styled.push(Span::from(exercise.prompt.orig[i].to_string()));
+            prompt_styled.push(Span::from(exercise.prompt.prompt[i].to_string()));
         }
     }
 
@@ -70,8 +70,8 @@ pub fn render(exercise: &mut Exercise, f: &mut Frame) {
 
     // change the colors of the typed text
     let mut typed_styled: Vec<Span> = Vec::new();
-    for i in 0..exercise.prompt.copy.len() {
-        typed_styled.push(Span::from(exercise.prompt.copy[i].to_string()));
+    for i in 0..exercise.prompt.typed.len() {
+        typed_styled.push(Span::from(exercise.prompt.typed[i].to_string()));
     }
 
     // Add a cursor

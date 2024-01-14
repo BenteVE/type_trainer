@@ -1,36 +1,60 @@
+use chrono::{DateTime, Local};
 use crossterm::event::{KeyCode, KeyEvent, KeyEventKind, KeyModifiers};
+use rand::{thread_rng, Rng};
+use serde::ser::{Serialize, SerializeStruct, Serializer};
 
-use crate::exercise::{settings::Settings, stats::Stats};
+use crate::exercise::settings::Settings;
 
-use std::time::Instant;
+use std::path::PathBuf;
 
-use super::prompt::Prompt;
+use super::{prompt::Prompt, split::Split, timer::Timer};
 
 pub struct Exercise {
+    pub time: DateTime<Local>,
+    pub file_path: PathBuf,
+    pub contents: Vec<String>,
+    pub contents_index: usize,
+
+    pub split: Split,
+
+    pub timer: Timer,
     pub settings: Settings,
     pub prompt: Prompt,
-    pub stats: Stats,
+
     should_quit: bool,
 }
 
 impl Exercise {
-    pub fn build(settings: Settings, prompt: Prompt) -> Exercise {
-        Exercise {
+    pub fn build(
+        timer: Timer,
+        settings: Settings,
+        file_path: PathBuf,
+        split: Split,
+        contents: Vec<String>,
+    ) -> Exercise {
+        let mut exercise = Exercise {
+            time: Local::now(),
+            timer,
+            prompt: Prompt::new(),
             settings,
-            prompt: prompt,
-            stats: Stats::new(),
+
+            file_path,
+            split,
+            contents,
+            contents_index: 0,
+
             should_quit: false,
-        }
+        };
+
+        exercise.select_first_prompt();
+        let prompt_chars = exercise.create_prompt();
+        exercise.prompt.next(prompt_chars);
+
+        exercise
     }
 
     /// Handles the tick event of the terminal.
     pub fn tick(&self) {}
-
-    /// Start the exercise timer
-    pub fn start(&mut self) {
-        // start the exercise timer
-        self.stats.start = Some(Instant::now());
-    }
 
     pub fn update(&mut self, key_event: KeyEvent) {
         if key_event.kind == KeyEventKind::Press {
@@ -49,52 +73,73 @@ impl Exercise {
         }
     }
 
+    fn select_first_prompt(&mut self) {
+        match self.settings.random {
+            true => self.contents_index = thread_rng().gen_range(0..self.contents.len()),
+            false => self.contents_index = 0,
+        };
+    }
+
+    fn select_next_prompt(&mut self) {
+        match self.settings.random {
+            true => self.contents_index = thread_rng().gen_range(0..self.contents.len()),
+            false => self.contents_index += 1,
+        };
+    }
+
+    fn create_prompt(&mut self) -> Vec<char> {
+        if let Some(string) = self.contents.get(self.contents_index) {
+            string.chars().collect()
+        } else {
+            self.quit();
+            Vec::new()
+        }
+    }
+
     fn press_enter(&mut self) {
-        // THIS SHOULD BE CHANGED BECAUSE FOR A TEXT, THE MISSING COUNTS AREN'T NECESSARILY FAULTS
-        self.stats.count_fault += self.prompt.count_missing();
-        self.prompt.handle_enter();
-        self.stats.count_enter += 1;
+        if self.split == Split::Text {
+        } else {
+            self.prompt.finish();
+            self.select_next_prompt();
+            let prompt_chars = self.create_prompt();
+            self.prompt.next(prompt_chars);
+        }
     }
 
     fn press_backspace(&mut self) {
-        match self.settings.backspace {
-            true => {
-                self.prompt.remove_char();
-                self.stats.count_backspace += 1;
-            }
-            false => {}
+        if self.settings.backspace {
+            self.prompt.remove_char();
         }
     }
 
     fn press_char(&mut self, c: char) {
-        match self.prompt.type_char(c) {
-            true => self.stats.count_correct += 1,
-            false => self.stats.count_fault += 1,
-        }
+        self.prompt.type_char(c);
     }
 
     /// Set should_quit to true to quit the application.
     pub fn quit(&mut self) {
-        self.stats.end = Some(Instant::now());
+        self.timer.stop();
         self.should_quit = true;
     }
 
     pub fn should_quit(&mut self) -> bool {
-        if self.timer_expired() {
+        if self.timer.timer_expired() {
             self.quit();
         }
         self.should_quit
     }
+}
 
-    fn timer_expired(&self) -> bool {
-        if let Some(duration) = self.settings.duration {
-            self.stats
-                .start
-                .expect("The timer should be started at the start of the exercise")
-                .elapsed()
-                >= duration
-        } else {
-            false
-        }
+impl Serialize for Exercise {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        let mut state = serializer.serialize_struct("Exercise", 3)?;
+        state.serialize_field("date", &self.time.to_rfc2822())?;
+        state.serialize_field("timer", &self.timer)?;
+        state.serialize_field("stats", &self.prompt)?;
+        state.serialize_field("settings", &self.settings)?;
+        state.end()
     }
 }
