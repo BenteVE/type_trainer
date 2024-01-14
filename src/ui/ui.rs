@@ -2,7 +2,7 @@ use ratatui::{
     layout::{Constraint, Direction, Layout},
     prelude::{Alignment, Frame},
     style::{Color, Modifier, Style, Stylize},
-    symbols::{self, block::FULL},
+    symbols::{self},
     text::{Line, Span},
     widgets::{Block, BorderType, Borders, LineGauge, Padding, Paragraph, Wrap},
 };
@@ -32,14 +32,7 @@ pub fn render(exercise: &mut Exercise, f: &mut Frame) {
 
     f.render_widget(screen, screen_area);
 
-    f.render_widget(
-        LineGauge::default()
-            .block(Block::default().borders(Borders::ALL).title("Progress"))
-            .gauge_style(Style::default().fg(Color::White).bg(Color::Black))
-            .ratio(exercise.prompt.ratio())
-            .line_set(symbols::line::THICK),
-        inner[0],
-    );
+    f.render_widget(exercise.timer.build_widget(), inner[0]);
 
     f.render_widget(
         LineGauge::default()
@@ -76,7 +69,7 @@ pub fn render(exercise: &mut Exercise, f: &mut Frame) {
 
     // Add a cursor
     typed_styled.push(Span::styled(
-        FULL,
+        symbols::block::FULL,
         Style::default().add_modifier(Modifier::SLOW_BLINK),
     ));
 
@@ -105,3 +98,4 @@ pub fn render(exercise: &mut Exercise, f: &mut Frame) {
         inner[3],
     );
 }
+
