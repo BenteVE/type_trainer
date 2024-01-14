@@ -1,7 +1,7 @@
 use ratatui::{
     style::{Color, Style},
     symbols,
-    widgets::{Block, Borders, LineGauge},
+    widgets::{Block, Borders, LineGauge, Paragraph, Wrap},
 };
 use serde::ser::{Serialize, SerializeStruct, Serializer};
 use std::path::PathBuf;
@@ -38,8 +38,8 @@ impl Content {
         }
     }
 
-    /// Used how many prompts are left
-    pub fn build_widget(&self) -> LineGauge {
+    /// Used to show how many prompts are remaining
+    pub fn build_progress_bar(&self) -> LineGauge {
         LineGauge::default()
             .block(Block::default().borders(Borders::ALL).title("Progress"))
             .gauge_style(Style::default().fg(Color::White).bg(Color::Black))
@@ -47,11 +47,13 @@ impl Content {
             .line_set(symbols::line::THICK)
     }
 
+    /// The typing area
+    pub fn build_next_prompts(&self) -> Paragraph {
+        Paragraph::new(self.content[self.prompt_index + 1..].join("\n")).wrap(Wrap { trim: false })
+    }
+
     pub fn ratio(&self) -> f64 {
-        match self.random {
-            true => 1 as f64,
-            false => self.prompt_index as f64 / self.content.len() as f64,
-        }
+        self.prompt_index as f64 / self.content.len() as f64
     }
 
     pub fn into_prompts(content: String, words: bool) -> Vec<String> {

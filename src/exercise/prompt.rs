@@ -1,3 +1,9 @@
+use ratatui::{
+    style::{Color, Modifier, Style, Stylize},
+    symbols,
+    text::{Line, Span},
+    widgets::{Block, Borders, LineGauge, Padding, Paragraph, Wrap},
+};
 use serde::ser::{Serialize, SerializeStruct, Serializer};
 
 pub struct Prompt {
@@ -61,6 +67,60 @@ impl Prompt {
             self.typed.pop();
             self.count_backspace += 1;
         }
+    }
+
+    /// Used how many prompts are left
+    pub fn build_ratio_bar(&self) -> LineGauge {
+        LineGauge::default()
+            .block(Block::default().borders(Borders::ALL).title("Ratio"))
+            .gauge_style(Style::default().fg(Color::LightGreen).bg(Color::LightRed))
+            .ratio(self.ratio())
+            .line_set(symbols::line::THICK)
+    }
+
+    /// TODO ADD EXTRA RED SPACES FOR EACH CHAR THAT PROMPT IS LONGER THAN TYPED
+    pub fn build_prompt_area(&self) -> Paragraph {
+        // change the colors of the paragraph
+        let mut prompt_styled: Vec<Span> = Vec::new();
+
+        for i in 0..self.prompt.len() {
+            if i < self.typed.len() {
+                match self.prompt[i] == self.typed[i] {
+                    true => {
+                        prompt_styled.push(Span::from(self.prompt[i].to_string()).bg(Color::Green))
+                    }
+                    false => {
+                        prompt_styled.push(Span::from(self.prompt[i].to_string()).bg(Color::Red))
+                    }
+                };
+            } else {
+                prompt_styled.push(Span::from(self.prompt[i].to_string()));
+            }
+        }
+        Paragraph::new(Line::from(prompt_styled))
+            .wrap(Wrap { trim: false })
+            .yellow()
+    }
+
+    /// The typing area
+    pub fn build_type_area(&self) -> Paragraph {
+        let mut typed_styled: Vec<Span> = Vec::new();
+        typed_styled.push(Span::from(self.typed.iter().collect::<String>()));
+
+        // Add a cursor to the typed text
+        typed_styled.push(Span::styled(
+            symbols::block::FULL,
+            Style::default().add_modifier(Modifier::SLOW_BLINK),
+        ));
+
+        Paragraph::new(Line::from(typed_styled))
+            .block(
+                Block::default()
+                    .title("Typed:")
+                    .borders(Borders::ALL)
+                    .padding(Padding::uniform(1)),
+            )
+            .wrap(Wrap { trim: false })
     }
 }
 
