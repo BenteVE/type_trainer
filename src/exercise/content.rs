@@ -1,8 +1,3 @@
-use ratatui::{
-    style::{Color, Style},
-    symbols,
-    widgets::{Block, Borders, LineGauge},
-};
 use serde::ser::{Serialize, SerializeStruct, Serializer};
 use std::path::PathBuf;
 
@@ -36,15 +31,6 @@ impl Content {
         } else {
             Option::None
         }
-    }
-
-    /// Used to show how many prompts are remaining
-    pub fn build_progress_bar(&self) -> LineGauge {
-        LineGauge::default()
-            .block(Block::default().borders(Borders::ALL).title("Progress"))
-            .gauge_style(Style::default().fg(Color::White).bg(Color::Black))
-            .ratio(self.ratio())
-            .line_set(symbols::line::THICK)
     }
 
     pub fn get_next_prompts(&self) -> Vec<String> {

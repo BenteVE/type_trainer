@@ -1,8 +1,3 @@
-use ratatui::{
-    style::{Color, Style},
-    symbols,
-    widgets::{Block, Borders, LineGauge},
-};
 use serde::ser::{Serialize, SerializeStruct, Serializer};
 use std::time::{Duration, Instant};
 
@@ -44,17 +39,6 @@ impl Timer {
         }
     }
 
-    // if there is some duration: give the ratio to that duration
-    // otherwise reset every minute
-    pub fn build_widget(&self) -> LineGauge {
-        LineGauge::default()
-            .block(Block::default().borders(Borders::ALL).title("Timer"))
-            .gauge_style(Style::default().fg(Color::White).bg(Color::Black))
-            .ratio(self.ratio())
-            .line_set(Self::build_timer_set())
-            .label(self.label())
-    }
-
     pub fn ratio(&self) -> f64 {
         let start = self
             .start
@@ -66,7 +50,8 @@ impl Timer {
         }
     }
 
-    pub fn label(&self) -> String {
+    /// Get the current time of the timer in String format = XX:XX
+    pub fn get_time(&self) -> String {
         let mut seconds = self
             .start
             .expect("The timer should be started at the start of the exercise")
@@ -82,22 +67,6 @@ impl Timer {
         match num < 10 {
             true => format!("0{}", num),
             false => format!("{}", num),
-        }
-    }
-
-    fn build_timer_set() -> symbols::line::Set {
-        symbols::line::Set {
-            horizontal: symbols::DOT,
-            vertical: symbols::DOT,
-            top_right: symbols::DOT,
-            top_left: symbols::DOT,
-            bottom_right: symbols::DOT,
-            bottom_left: symbols::DOT,
-            vertical_left: symbols::DOT,
-            vertical_right: symbols::DOT,
-            horizontal_down: symbols::DOT,
-            horizontal_up: symbols::DOT,
-            cross: symbols::DOT,
         }
     }
 }
