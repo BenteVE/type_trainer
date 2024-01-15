@@ -1,8 +1,9 @@
 use ratatui::{
+    layout::Alignment,
     style::{Color, Modifier, Style, Stylize},
     symbols,
-    text::{Line, Span},
-    widgets::{Block, Borders, LineGauge, Padding, Paragraph, Wrap},
+    text::{Line, Span, Text},
+    widgets::{Block, BorderType, Borders, LineGauge, Padding, Paragraph, Wrap},
 };
 use serde::ser::{Serialize, SerializeStruct, Serializer};
 
@@ -78,28 +79,55 @@ impl Prompt {
             .line_set(symbols::line::THICK)
     }
 
-    /// TODO ADD EXTRA RED SPACES FOR EACH CHAR THAT PROMPT IS LONGER THAN TYPED
-    pub fn build_prompt_area(&self) -> Paragraph {
+    pub fn build_prompt_area(&self, next_prompts: Vec<String>) -> Paragraph {
         // change the colors of the paragraph
         let mut prompt_styled: Vec<Span> = Vec::new();
 
-        for i in 0..self.prompt.len() {
-            if i < self.typed.len() {
-                match self.prompt[i] == self.typed[i] {
-                    true => {
-                        prompt_styled.push(Span::from(self.prompt[i].to_string()).bg(Color::Green))
-                    }
-                    false => {
-                        prompt_styled.push(Span::from(self.prompt[i].to_string()).bg(Color::Red))
-                    }
-                };
-            } else {
-                prompt_styled.push(Span::from(self.prompt[i].to_string()));
-            }
+        for i in 0..usize::min(self.typed.len(), self.prompt.len()) {
+            match self.prompt[i] == self.typed[i] {
+                true => prompt_styled.push(
+                    Span::from(self.prompt[i].to_string())
+                        .bg(Color::Green)
+                        .yellow(),
+                ),
+                false => prompt_styled.push(
+                    Span::from(self.prompt[i].to_string())
+                        .bg(Color::Red)
+                        .yellow(),
+                ),
+            };
         }
-        Paragraph::new(Line::from(prompt_styled))
-            .wrap(Wrap { trim: false })
-            .yellow()
+        // if typed is longer than prompt, we add red spaces for each unnecessary letter
+        if self.typed.len() > self.prompt.len() {
+            prompt_styled.push(
+                Span::from(
+                    std::iter::repeat(" ")
+                        .take(self.typed.len() - self.prompt.len())
+                        .collect::<String>(),
+                )
+                .bg(Color::Red)
+                .yellow(),
+            )
+        }
+        // The rest of the line should not be styled
+        else if self.typed.len() < self.prompt.len() {
+            prompt_styled.push(
+                Span::from(self.prompt[self.typed.len()..].iter().collect::<String>()).yellow(),
+            );
+        }
+
+        let mut text = Text::from(Line::from(prompt_styled));
+        text.extend(next_prompts);
+
+        Paragraph::new(text).wrap(Wrap { trim: false }).block(
+            Block::default()
+                .title("Prompt")
+                .title_alignment(Alignment::Left)
+                .borders(Borders::ALL)
+                .border_type(BorderType::Rounded)
+                .border_style(Style::default().yellow())
+                .padding(Padding::uniform(1)),
+        )
     }
 
     /// The typing area
@@ -113,6 +141,7 @@ impl Prompt {
             Style::default().add_modifier(Modifier::SLOW_BLINK),
         ));
 
+        /// Calculate a scroll determined by the number of lines it is stretched over
         Paragraph::new(Line::from(typed_styled))
             .block(
                 Block::default()

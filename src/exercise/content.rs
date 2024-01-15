@@ -1,7 +1,7 @@
 use ratatui::{
     style::{Color, Style},
     symbols,
-    widgets::{Block, Borders, LineGauge, Paragraph, Wrap},
+    widgets::{Block, Borders, LineGauge},
 };
 use serde::ser::{Serialize, SerializeStruct, Serializer};
 use std::path::PathBuf;
@@ -47,9 +47,8 @@ impl Content {
             .line_set(symbols::line::THICK)
     }
 
-    /// The typing area
-    pub fn build_next_prompts(&self) -> Paragraph {
-        Paragraph::new(self.content[self.prompt_index + 1..].join("\n")).wrap(Wrap { trim: false })
+    pub fn get_next_prompts(&self) -> Vec<String> {
+        self.content[self.prompt_index + 1..].to_vec()
     }
 
     pub fn ratio(&self) -> f64 {
