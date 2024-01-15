@@ -13,7 +13,7 @@ use ratatui::{
 use crate::exercise::{content::Content, exercise::Exercise, prompt::Prompt, timer::Timer};
 
 pub fn render(exercise: &Exercise, f: &mut Frame) {
-    let screen = Block::default()
+    let border = Block::default()
         .title(" Type Trainer ")
         .title_alignment(Alignment::Center)
         .title(Title::from(" Press 'Esc' to quit ").position(Position::Bottom))
@@ -30,10 +30,9 @@ pub fn render(exercise: &Exercise, f: &mut Frame) {
             Constraint::Length(7), // type area
         ])
         .margin(2)
-        .split(screen.inner(f.size()));
+        .split(border.inner(f.size()));
 
-    f.render_widget(screen, f.size());
-
+    f.render_widget(border, f.size());
     f.render_widget(timer(&exercise.timer), inner[0]);
     f.render_widget(progress_bar(&exercise.content), inner[1]);
     f.render_widget(ratio_bar(&exercise.prompt), inner[2]);
@@ -49,7 +48,7 @@ fn timer(timer: &Timer) -> LineGauge {
         .gauge_style(Style::default().fg(Color::White).bg(Color::Black))
         .ratio(timer.ratio())
         .line_set(linegauge_set_dots())
-        .label(timer.get_time())
+        .label(timer.get_time_label())
 }
 
 /// Used to show how many prompts are remaining
@@ -121,7 +120,6 @@ fn typed(prompt: &Prompt) -> Paragraph {
     // Add a cursor to the typed text
     typed_styled.push(Span::from(symbols::block::FULL).add_modifier(Modifier::SLOW_BLINK));
 
-    /// Calculate a scroll determined by the number of lines it is stretched over
     Paragraph::new(Line::from(typed_styled))
         .block(
             Block::default()

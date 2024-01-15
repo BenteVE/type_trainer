@@ -77,6 +77,20 @@ impl Exercise {
         self.prompt.type_char(c);
     }
 
+    pub fn calculate_wpm(&self) -> usize{
+        // we only count the correct characters for this calculation
+        // we subtract the backspace to avoid having a high wpm by typing and removing the same letters
+        let letters = self.prompt.count_correct-self.prompt.count_backspace;
+
+        // for the wpm calculation, each word is 5 letters long
+        let words = letters as f32 / 5 as f32;
+
+        let seconds = self.timer.get_time().as_secs_f32();
+        let minutes = seconds / 60 as f32;
+
+        (words / minutes).round() as usize
+    }
+
     /// Set should_quit to true to quit the application.
     pub fn quit(&mut self) {
         self.timer.stop();
@@ -96,12 +110,13 @@ impl Serialize for Exercise {
     where
         S: Serializer,
     {
-        let mut state = serializer.serialize_struct("Exercise", 3)?;
+        let mut state = serializer.serialize_struct("Exercise", 6)?;
         state.serialize_field("date", &self.time.to_rfc2822())?;
         state.serialize_field("timer", &self.timer)?;
         state.serialize_field("content", &self.content)?;
         state.serialize_field("settings", &self.settings)?;
         state.serialize_field("stats", &self.prompt)?;
+        state.serialize_field("wpm", &self.calculate_wpm())?;
         state.end()
     }
 }
