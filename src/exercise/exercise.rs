@@ -77,10 +77,13 @@ impl Exercise {
         self.prompt.type_char(c);
     }
 
-    pub fn calculate_wpm(&self) -> usize{
+    pub fn calculate_wpm(&self) -> usize {
         // we only count the correct characters for this calculation
         // we subtract the backspace to avoid having a high wpm by typing and removing the same letters
-        let letters = self.prompt.count_correct-self.prompt.count_backspace;
+        let letters = self
+            .prompt
+            .count_correct
+            .saturating_sub(self.prompt.count_backspace);
 
         // for the wpm calculation, each word is 5 letters long
         let words = letters as f32 / 5 as f32;
