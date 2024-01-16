@@ -21,6 +21,10 @@ impl Content {
         }
     }
 
+    pub fn reset(&mut self) {
+        self.prompt_index = 0;
+    }
+
     pub fn next_prompt(&mut self) {
         self.prompt_index += 1;
     }
@@ -34,7 +38,10 @@ impl Content {
     }
 
     pub fn get_next_prompts(&self) -> Vec<String> {
-        self.content[self.prompt_index + 1..].to_vec()
+        match self.content.len() >= self.prompt_index + 1 {
+            true => self.content[self.prompt_index + 1..].to_vec(),
+            false => Vec::new(),
+        }
     }
 
     pub fn ratio(&self) -> f64 {

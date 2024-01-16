@@ -24,6 +24,11 @@ impl Timer {
         self.end = Some(Instant::now());
     }
 
+    pub fn reset(&mut self) {
+        self.start = Option::None;
+        self.end = Option::None;
+    }
+
     pub fn get_time(&self) -> Duration {
         if let Some(start) = self.start {
             if let Some(end) = self.end {

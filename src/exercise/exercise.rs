@@ -7,6 +7,14 @@ use crate::exercise::settings::Settings;
 
 use super::{content::Content, prompt::Prompt, timer::Timer};
 
+#[derive(PartialEq, Eq)]
+pub enum State {
+    Waiting,
+    Running,
+    Finished,
+    Quiting,
+}
+
 pub struct Exercise {
     pub time: DateTime<Local>,
 
@@ -15,7 +23,7 @@ pub struct Exercise {
     pub settings: Settings,
     pub prompt: Prompt,
 
-    should_quit: bool,
+    pub state: State,
 }
 
 impl Exercise {
@@ -31,8 +39,8 @@ impl Exercise {
             timer,
             prompt: prompt,
             settings,
-            should_quit: false,
             content,
+            state: State::Waiting,
         }
     }
 
@@ -41,18 +49,38 @@ impl Exercise {
 
     pub fn update(&mut self, key_event: KeyEvent) {
         if key_event.kind == KeyEventKind::Press {
-            match key_event.code {
-                KeyCode::Esc => self.quit(),
-                KeyCode::Char('c') | KeyCode::Char('C')
-                    if key_event.modifiers == KeyModifiers::CONTROL =>
-                {
-                    self.quit()
+            if key_event.modifiers == KeyModifiers::CONTROL {
+                match self.state {
+                    State::Waiting => match key_event.code {
+                        KeyCode::Char('c') | KeyCode::Char('C') => self.quit(),
+                        _ => {}
+                    },
+                    State::Running => match key_event.code {
+                        KeyCode::Char('c') | KeyCode::Char('C') => self.stop(),
+                        KeyCode::Char('r') | KeyCode::Char('R') => self.restart(),
+                        _ => {}
+                    },
+                    State::Finished => match key_event.code {
+                        KeyCode::Char('c') | KeyCode::Char('C') => self.quit(),
+                        KeyCode::Char('r') | KeyCode::Char('R') => self.restart(),
+                        _ => {}
+                    },
+                    _ => {}
                 }
-                KeyCode::Enter => self.press_enter(),
-                KeyCode::Char(c) => self.press_char(c),
-                KeyCode::Backspace => self.press_backspace(),
-                _ => {}
-            };
+            } else {
+                if self.state == State::Waiting {
+                    self.state = State::Running;
+                    self.start();
+                }
+                if self.state == State::Running {
+                    match key_event.code {
+                        KeyCode::Enter => self.press_enter(),
+                        KeyCode::Char(c) => self.press_char(c),
+                        KeyCode::Backspace => self.press_backspace(),
+                        _ => {}
+                    };
+                }
+            }
         }
     }
 
@@ -63,7 +91,7 @@ impl Exercise {
         if let Some(p) = self.content.get_prompt() {
             self.prompt.set(p);
         } else {
-            self.quit();
+            self.stop();
         }
     }
 
@@ -94,17 +122,36 @@ impl Exercise {
         (words / minutes).round() as usize
     }
 
-    /// Set should_quit to true to quit the application.
-    pub fn quit(&mut self) {
-        self.timer.stop();
-        self.should_quit = true;
+    fn start(&mut self) {
+        self.state = State::Running;
+        self.timer.start();
     }
 
-    pub fn should_quit(&mut self) -> bool {
+    fn restart(&mut self) {
+        self.state = State::Waiting;
+        self.time = Local::now();
+
+        self.content.reset();
+        self.timer.reset();
+        self.prompt = Prompt::new(self.content.get_prompt().unwrap());
+    }
+
+    fn stop(&mut self) {
+        self.timer.stop();
+        self.state = State::Finished;
+
+        // Write the results to a file
+        // println!("{}", serde_json::to_string(&exercise).unwrap());
+    }
+
+    pub fn quit(&mut self) {
+        self.state = State::Quiting;
+    }
+
+    pub fn check_timer(&mut self) {
         if self.timer.timer_expired() {
-            self.quit();
+            self.stop();
         }
-        self.should_quit
     }
 }
 

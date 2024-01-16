@@ -1,6 +1,7 @@
 use anyhow::{Ok, Result};
 use ratatui::{backend::CrosstermBackend, Terminal};
 use type_trainer::{
+    exercise::exercise::State,
     parser::Parser,
     ui::{
         event::{Event, EventHandler},
@@ -21,13 +22,17 @@ fn main() -> Result<()> {
     let mut tui = Tui::new(terminal, events);
     tui.enter()?;
 
-    // Do a countdown
-    exercise.timer.start();
-
     // Start the main loop.
-    while !exercise.should_quit() {
+    loop {
+        match exercise.state {
+            State::Running => exercise.check_timer(),
+            State::Quiting => break,
+            _ => {}
+        }
+
         // Render the user interface.
         tui.draw(&mut exercise)?;
+
         // Handle events.
         match tui.events.next()? {
             Event::Tick => {}
@@ -37,13 +42,8 @@ fn main() -> Result<()> {
         };
     }
 
-    // Show the stats on an end screen
-
     // Exit the user interface.
     tui.exit()?;
-
-    println!("Print the serialized stats");
-    println!("{}", serde_json::to_string(&exercise).unwrap());
 
     Ok(())
 }
