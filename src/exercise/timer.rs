@@ -3,7 +3,6 @@ use std::time::{Duration, Instant};
 
 pub struct Timer {
     start: Option<Instant>,
-    end: Option<Instant>,
     saved: Duration,
     duration: Option<Duration>,
 }
@@ -13,7 +12,6 @@ impl Timer {
         Timer {
             saved: Duration::from_secs(0),
             start: Option::None,
-            end: Option::None,
             duration,
         }
     }
@@ -21,33 +19,20 @@ impl Timer {
     pub fn start(&mut self) {
         self.start = Some(Instant::now());
     }
-
-    /// When pausing, save the elapsed time in the saved field
-    pub fn pause(&mut self) {
-        self.saved = self.get_time();
-
-        // Stop the timer from counting up when it is paused
-        self.start = Option::None;
-    }
-
+    
     pub fn stop(&mut self) {
-        self.end = Some(Instant::now());
+        self.saved = self.get_time();
+        self.start = Option::None;
     }
 
     pub fn reset(&mut self) {
         self.start = Option::None;
-        self.end = Option::None;
         self.saved = Duration::from_secs(0);
     }
 
-    // we need to add the savd duration to the return to make the pause function work
     pub fn get_time(&self) -> Duration {
         let elapsed = if let Some(start) = self.start {
-            if let Some(end) = self.end {
-                end.duration_since(start)
-            } else {
-                Instant::now().duration_since(start)
-            }
+            Instant::now().duration_since(start)
         } else {
             Duration::new(0, 0)
         };

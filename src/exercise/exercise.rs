@@ -136,7 +136,7 @@ impl Exercise {
 
     fn pause(&mut self) {
         self.state = State::Pausing;
-        self.timer.pause();
+        self.timer.stop();
     }
 
     fn restart(&mut self) {
