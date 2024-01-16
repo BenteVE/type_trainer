@@ -19,7 +19,7 @@ impl Timer {
     pub fn start(&mut self) {
         self.start = Some(Instant::now());
     }
-    
+
     pub fn stop(&mut self) {
         self.saved = self.get_time();
         self.start = Option::None;
@@ -49,7 +49,10 @@ impl Timer {
 
     pub fn ratio(&self) -> f64 {
         if let Some(duration) = self.duration {
-            return self.get_time().as_secs_f64() / duration.as_secs_f64();
+            return f64::min(
+                self.get_time().as_secs_f64() / duration.as_secs_f64(),
+                1 as f64,
+            );
         } else {
             return self.get_time().as_secs_f64() % 60 as f64 / 60 as f64;
         }
