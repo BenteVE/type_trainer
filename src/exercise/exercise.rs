@@ -11,6 +11,7 @@ use super::{content::Content, prompt::Prompt, timer::Timer};
 pub enum State {
     Waiting,
     Running,
+    Pausing,
     Finished,
     Quiting,
 }
@@ -58,6 +59,12 @@ impl Exercise {
                     State::Running => match key_event.code {
                         KeyCode::Char('c') | KeyCode::Char('C') => self.stop(),
                         KeyCode::Char('r') | KeyCode::Char('R') => self.restart(),
+                        KeyCode::Char('p') | KeyCode::Char('P') => self.pause(),
+                        _ => {}
+                    },
+                    State::Pausing => match key_event.code {
+                        KeyCode::Char('c') | KeyCode::Char('C') => self.stop(),
+                        KeyCode::Char('r') | KeyCode::Char('R') => self.restart(),
                         _ => {}
                     },
                     State::Finished => match key_event.code {
@@ -68,7 +75,7 @@ impl Exercise {
                     _ => {}
                 }
             } else {
-                if self.state == State::Waiting {
+                if self.state == State::Waiting || self.state == State::Pausing {
                     self.state = State::Running;
                     self.start();
                 }
@@ -125,6 +132,11 @@ impl Exercise {
     fn start(&mut self) {
         self.state = State::Running;
         self.timer.start();
+    }
+
+    fn pause(&mut self) {
+        self.state = State::Pausing;
+        self.timer.pause();
     }
 
     fn restart(&mut self) {
