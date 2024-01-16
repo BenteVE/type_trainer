@@ -56,7 +56,7 @@ pub fn render(exercise: &Exercise, f: &mut Frame) {
     f.render_widget(info(), top_right[0]);
     f.render_widget(wpm(&exercise), top_right[1]);
     f.render_widget(prompt(exercise), inner[1]);
-    f.render_widget(typed(&exercise.prompt), inner[2]);
+    f.render_widget(typed(exercise), inner[2]);
 }
 
 fn info() -> Paragraph<'static> {
@@ -121,12 +121,41 @@ fn ratio_bar(prompt: &Prompt) -> LineGauge {
 }
 
 fn prompt(exercise: &Exercise) -> Paragraph {
-    let prompt = &exercise.prompt.prompt;
-    let typed = &exercise.prompt.typed;
+    let mut text = match exercise.settings.highlight {
+        true => get_prompt_highlight(&exercise.prompt),
+        false => get_prompt(&exercise.prompt),
+    };
 
-    // change the colors of the paragraph
+    // Append the following lines without extra styling
+    text.extend(exercise.content.get_next_prompts());
+
+    Paragraph::new(text).wrap(Wrap { trim: false }).block(
+        Block::default()
+            .title("Prompt")
+            .title_alignment(Alignment::Left)
+            .borders(Borders::ALL)
+            .border_type(BorderType::Rounded)
+            .border_style(Style::default().yellow())
+            .padding(Padding::uniform(1)),
+    )
+}
+
+fn get_prompt(prompt: &Prompt) -> Text {
+    Text::from(Line::from(
+        Span::from(prompt.prompt.iter().collect::<String>()).yellow(),
+    ))
+}
+
+/// The text of the current prompt is yellow
+/// Highlight the prompt in green if the typed text is correct
+/// Highlight the prompt in red if the typed text is wrong
+fn get_prompt_highlight(prompt: &Prompt) -> Text {
+    let typed = &prompt.typed;
+    let prompt = &prompt.prompt;
+
     let mut prompt_styled: Vec<Span> = Vec::new();
 
+    // check for each letter if it is correct and style accordingly
     for i in 0..usize::min(typed.len(), prompt.len()) {
         match prompt[i] == typed[i] {
             true => prompt_styled.push(Span::from(prompt[i].to_string()).bg(Color::Green).yellow()),
@@ -150,28 +179,22 @@ fn prompt(exercise: &Exercise) -> Paragraph {
         prompt_styled.push(Span::from(prompt[typed.len()..].iter().collect::<String>()).yellow());
     }
 
-    let mut text = Text::from(Line::from(prompt_styled));
-    text.extend(exercise.content.get_next_prompts());
-
-    Paragraph::new(text).wrap(Wrap { trim: false }).block(
-        Block::default()
-            .title("Prompt")
-            .title_alignment(Alignment::Left)
-            .borders(Borders::ALL)
-            .border_type(BorderType::Rounded)
-            .border_style(Style::default().yellow())
-            .padding(Padding::uniform(1)),
-    )
+    Text::from(Line::from(prompt_styled))
 }
 
 /// The typing area
-fn typed(prompt: &Prompt) -> Paragraph {
-    let mut typed_styled = vec![Span::from(prompt.typed.iter().collect::<String>())];
+fn typed(exercise: &Exercise) -> Paragraph {
+    let typed = match exercise.settings.blind {
+        true => Text::from(""),
+        false => {
+            let mut spans = vec![Span::from(exercise.prompt.typed.iter().collect::<String>())];
+            // Add a cursor to the typed text
+            spans.push(Span::from(symbols::block::FULL).add_modifier(Modifier::SLOW_BLINK));
+            Text::from(Line::from(spans))
+        }
+    };
 
-    // Add a cursor to the typed text
-    typed_styled.push(Span::from(symbols::block::FULL).add_modifier(Modifier::SLOW_BLINK));
-
-    Paragraph::new(Line::from(typed_styled))
+    Paragraph::new(typed)
         .block(
             Block::default()
                 .title("Typed:")

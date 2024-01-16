@@ -69,24 +69,26 @@ impl Parser {
                     .value_parser(value_parser!(u16).range(1..)),
             )
             .arg(
-                Arg::new("blind")
-                    .long("blind")
-                    .short('b')
-                    .help("Hide the letters while you are typing")
-                    .required(false)
-                    .action(ArgAction::SetTrue),
-            )
-            .arg(
                 Arg::new("backspace")
-                    .short('c')
+                    .long("fixed")
+                    .short('f')
                     .help("Disable the backspace")
                     .required(false)
                     .action(ArgAction::SetFalse),
             )
             .arg(
-                Arg::new("marker")
-                    .short('m')
-                    .help("Mark the correct chars in green and the mistakes in red")
+                Arg::new("blind")
+                    .long("blind")
+                    .short('b')
+                    .help("Hide the letters you type from the screen")
+                    .required(false)
+                    .action(ArgAction::SetTrue),
+            )
+            .arg(
+                Arg::new("highlight")
+                    .long("unmark")
+                    .short('u')
+                    .help("Disable the highlighting of the correct letters in green and the mistakes in red")
                     .required(false)
                     .action(ArgAction::SetFalse),
             )
@@ -150,10 +152,10 @@ impl Parser {
     // parse the command line arguments to create the settings
     pub fn get_settings(matches: &ArgMatches) -> Result<Settings> {
         let backspace = matches.get_flag("backspace");
-        let marker = matches.get_flag("marker");
+        let highlight = matches.get_flag("highlight");
         let blind = matches.get_flag("blind");
 
-        Ok(Settings::build(backspace, marker, blind))
+        Ok(Settings::build(backspace, highlight, blind))
     }
 
     pub fn get_timer(matches: &ArgMatches) -> Result<Timer> {
