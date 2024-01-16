@@ -4,10 +4,7 @@ use ratatui::{
     style::{Color, Modifier, Style, Stylize},
     symbols,
     text::{Line, Span, Text},
-    widgets::{
-        block::{Position, Title},
-        Block, BorderType, Borders, LineGauge, Padding, Paragraph, Wrap,
-    },
+    widgets::{Block, BorderType, Borders, LineGauge, Padding, Paragraph, Wrap},
 };
 
 use crate::exercise::{content::Content, exercise::Exercise, prompt::Prompt, timer::Timer};
@@ -16,28 +13,82 @@ pub fn render(exercise: &Exercise, f: &mut Frame) {
     let border = Block::default()
         .title(" Type Trainer ")
         .title_alignment(Alignment::Center)
-        .title(Title::from(" Press 'Esc' to quit ").position(Position::Bottom))
         .borders(Borders::ALL)
         .border_type(BorderType::Double);
 
     let inner = Layout::default()
         .direction(Direction::Vertical)
         .constraints(vec![
-            Constraint::Length(3), // timer
-            Constraint::Length(3), // progress bar
-            Constraint::Length(3), // correct ratio
-            Constraint::Min(7),    // prompt area
-            Constraint::Length(7), // type area
+            Constraint::Length(11), // information block
+            Constraint::Min(7),     // prompt area
+            Constraint::Length(7),  // type area
         ])
-        .margin(2)
+        .vertical_margin(2)
+        .horizontal_margin(1)
         .split(border.inner(f.size()));
 
+    let top = Layout::default()
+        .direction(Direction::Horizontal)
+        .constraints(vec![Constraint::Min(22), Constraint::Length(22)])
+        .split(inner[0]);
+
+    let top_left = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints(vec![
+            Constraint::Ratio(1, 3), // timer
+            Constraint::Ratio(1, 3), // progress
+            Constraint::Ratio(1, 3), // ratio
+        ])
+        .split(border.inner(top[0]));
+
+    let top_right = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints(vec![
+            Constraint::Ratio(2, 3), // options
+            Constraint::Ratio(1, 3), // words per minute
+        ])
+        .split(border.inner(top[1]));
+
     f.render_widget(border, f.size());
-    f.render_widget(timer(&exercise.timer), inner[0]);
-    f.render_widget(progress_bar(&exercise.content), inner[1]);
-    f.render_widget(ratio_bar(&exercise.prompt), inner[2]);
-    f.render_widget(prompt(exercise), inner[3]);
-    f.render_widget(typed(&exercise.prompt), inner[4]);
+    f.render_widget(timer(&exercise.timer), top_left[0]);
+    f.render_widget(progress_bar(&exercise.content), top_left[1]);
+    f.render_widget(ratio_bar(&exercise.prompt), top_left[2]);
+    f.render_widget(info(), top_right[0]);
+    f.render_widget(wpm(&exercise), top_right[1]);
+    f.render_widget(prompt(exercise), inner[1]);
+    f.render_widget(typed(&exercise.prompt), inner[2]);
+}
+
+fn info() -> Paragraph<'static> {
+    let options = vec![
+        "Start:    Type",
+        "Stop:    'Esc'",
+        "Restart: 'Ctrl+R'",
+        "Quit:    'Ctrl+C'",
+    ];
+    let text = Text::from(
+        options
+            .iter()
+            .map(|&option| Line::from(option))
+            .collect::<Vec<Line>>(),
+    );
+    Paragraph::new(text).block(
+        Block::default()
+            .title("Options")
+            .title_alignment(Alignment::Left)
+            .borders(Borders::ALL),
+    )
+}
+
+fn wpm(exercise: &Exercise) -> Paragraph {
+    Paragraph::new(format!("{} WPM", exercise.calculate_wpm()))
+        .block(
+            Block::new()
+                .title("Words per minute")
+                .title_alignment(Alignment::Left)
+                .borders(Borders::ALL),
+        )
+        .wrap(Wrap { trim: false })
 }
 
 // if there is some duration: give the ratio to that duration
