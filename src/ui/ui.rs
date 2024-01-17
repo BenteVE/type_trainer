@@ -134,6 +134,8 @@ fn ratio_bar(prompt: &Prompt) -> LineGauge {
         .line_set(symbols::line::THICK)
 }
 
+const ORANGE: Color = Color::Rgb(255, 140, 0);
+
 fn prompt(exercise: &Exercise) -> Paragraph {
     let text = match exercise.state {
         State::Waiting | State::Running | State::Pausing => {
@@ -154,18 +156,18 @@ fn prompt(exercise: &Exercise) -> Paragraph {
             .title_alignment(Alignment::Left)
             .borders(Borders::ALL)
             .border_type(BorderType::Rounded)
-            .border_style(Style::default().yellow())
+            .border_style(Style::default().fg(ORANGE))
             .padding(Padding::uniform(1)),
     )
 }
 
 fn get_prompt(prompt: &Prompt) -> Text {
     Text::from(Line::from(
-        Span::from(prompt.prompt.iter().collect::<String>()).yellow(),
+        Span::from(prompt.prompt.iter().collect::<String>()).fg(ORANGE),
     ))
 }
 
-/// The text of the current prompt is yellow
+/// The text of the current prompt is orange
 /// Highlight the prompt in green if the typed text is correct
 /// Highlight the prompt in red if the typed text is wrong
 fn get_prompt_highlight(prompt: &Prompt) -> Text {
@@ -177,8 +179,14 @@ fn get_prompt_highlight(prompt: &Prompt) -> Text {
     // check for each letter if it is correct and style accordingly
     for i in 0..usize::min(typed.len(), prompt.len()) {
         match prompt[i] == typed[i] {
-            true => prompt_styled.push(Span::from(prompt[i].to_string()).bg(Color::Green).yellow()),
-            false => prompt_styled.push(Span::from(prompt[i].to_string()).bg(Color::Red).yellow()),
+            true => prompt_styled.push(
+                Span::from(prompt[i].to_string())
+                    .bg(Color::Green)
+                    .fg(ORANGE),
+            ),
+            false => {
+                prompt_styled.push(Span::from(prompt[i].to_string()).bg(Color::Red).fg(ORANGE))
+            }
         };
     }
     // if typed is longer than prompt, we add red spaces for each unnecessary letter
@@ -190,12 +198,12 @@ fn get_prompt_highlight(prompt: &Prompt) -> Text {
                     .collect::<String>(),
             )
             .bg(Color::Red)
-            .yellow(),
+            .fg(ORANGE),
         )
     }
     // The rest of the line should not be styled
     else if typed.len() < prompt.len() {
-        prompt_styled.push(Span::from(prompt[typed.len()..].iter().collect::<String>()).yellow());
+        prompt_styled.push(Span::from(prompt[typed.len()..].iter().collect::<String>()).fg(ORANGE));
     }
 
     Text::from(Line::from(prompt_styled))
