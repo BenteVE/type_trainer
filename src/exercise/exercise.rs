@@ -13,7 +13,7 @@ pub enum State {
     Running,
     Pausing,
     Finished,
-    Quiting,
+    Quitting,
 }
 
 pub struct Exercise {
@@ -157,7 +157,7 @@ impl Exercise {
     }
 
     pub fn quit(&mut self) {
-        self.state = State::Quiting;
+        self.state = State::Quitting;
     }
 
     pub fn check_timer(&mut self) {

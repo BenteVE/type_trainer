@@ -26,7 +26,7 @@ fn main() -> Result<()> {
     loop {
         match exercise.state {
             State::Running => exercise.check_timer(),
-            State::Quiting => break,
+            State::Quitting => break,
             _ => {}
         }
 
