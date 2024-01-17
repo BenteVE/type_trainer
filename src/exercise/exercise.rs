@@ -1,3 +1,5 @@
+use std::{fs::OpenOptions, io::Write};
+
 use chrono::{DateTime, Local};
 use crossterm::event::{KeyCode, KeyEvent, KeyEventKind, KeyModifiers};
 
@@ -150,8 +152,23 @@ impl Exercise {
         self.timer.stop();
         self.state = State::Finished;
 
-        // Write the results to a file
-        // println!("{}", serde_json::to_string(&exercise).unwrap());
+        self.save();
+    }
+
+    fn save(&self) {
+        if let Ok(mut s) = serde_json::to_string(self) {
+            s.push('\n');
+
+            let file = OpenOptions::new()
+                .create(true)
+                .append(true)
+                .write(true)
+                .open("type_trainer.json");
+
+            if let Ok(mut file) = file {
+                if let Ok(_) = file.write(s.as_bytes()) {}
+            }
+        }
     }
 
     pub fn quit(&mut self) {
