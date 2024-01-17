@@ -77,6 +77,14 @@ impl Exercise {
                         _ => {}
                     };
                 }
+                if self.settings.auto && self.prompt.prompt.len() == self.prompt.typed.len() {
+                    self.press_enter();
+                }
+                if let Some(t) = self.settings.terminate {
+                    if self.prompt.count_fault >= t {
+                        self.stop();
+                    }
+                }
             }
         }
     }

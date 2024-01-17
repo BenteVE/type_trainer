@@ -44,12 +44,22 @@ impl Parser {
                     .value_parser(value_parser!(u32).range(1..)),
             )
             .arg(
-                Arg::new("random")
-                    .long("random")
-                    .short('r')
-                    .help("Shuffle the prompts in a random order.")
+                Arg::new("duration")
+                    .long("duration")
+                    .short('d')
+                    .help("Limit of the duration of the exercise in seconds")
                     .required(false)
-                    .action(ArgAction::SetTrue),
+                    .action(ArgAction::Set)
+                    .value_parser(value_parser!(u16).range(1..)),
+            )
+            .arg(
+                Arg::new("terminate")
+                    .long("terminate")
+                    .short('t')
+                    .help("Terminate the exercise after the given amount of mistakes are made")
+                    .required(false)
+                    .action(ArgAction::Set)
+                    .value_parser(value_parser!(u16).range(1..)),
             )
             .arg(
                 Arg::new("words")
@@ -60,13 +70,12 @@ impl Parser {
                     .action(ArgAction::SetTrue),
             )
             .arg(
-                Arg::new("duration")
-                    .long("duration")
-                    .short('d')
-                    .help("Limit of the duration of the exercise in seconds")
+                Arg::new("random")
+                    .long("random")
+                    .short('r')
+                    .help("Shuffle the prompts in a random order.")
                     .required(false)
-                    .action(ArgAction::Set)
-                    .value_parser(value_parser!(u16).range(1..)),
+                    .action(ArgAction::SetTrue),
             )
             .arg(
                 Arg::new("backspace")
@@ -91,6 +100,14 @@ impl Parser {
                     .help("Disable the highlighting of the correct letters in green and the mistakes in red")
                     .required(false)
                     .action(ArgAction::SetFalse),
+            )
+            .arg(
+                Arg::new("auto")
+                    .long("auto")
+                    .short('a')
+                    .help("Automatically progress to the next line without pressing enter.")
+                    .required(false)
+                    .action(ArgAction::SetTrue),
             )
             .get_matches()
     }
@@ -123,8 +140,8 @@ impl Parser {
         }
 
         // Start at the given line
-        if let Some(start) = matches.get_one::<u32>("start") {
-            let start = *start as usize;
+        if let Some(&start) = matches.get_one::<u32>("start") {
+            let start = start as usize;
             if start >= prompts.len() {
                 return Err(anyhow!("Starting value {} results in 0 prompts", start));
             } else {
@@ -133,8 +150,8 @@ impl Parser {
         };
 
         // Shorten the amount of lines if necessary
-        if let Some(lines) = matches.get_one::<u32>("lines") {
-            let lines = *lines as usize;
+        if let Some(&lines) = matches.get_one::<u32>("lines") {
+            let lines = lines as usize;
             if lines < prompts.len() {
                 prompts = prompts[..lines].to_vec();
             }
@@ -154,8 +171,15 @@ impl Parser {
         let backspace = matches.get_flag("backspace");
         let highlight = matches.get_flag("highlight");
         let blind = matches.get_flag("blind");
+        let auto = matches.get_flag("auto");
+        let terminate = match matches.get_one::<u16>("terminate") {
+            Some(&t) => Some(t as usize),
+            None => Option::None,
+        };
 
-        Ok(Settings::build(backspace, highlight, blind))
+        Ok(Settings::build(
+            backspace, highlight, blind, auto, terminate,
+        ))
     }
 
     pub fn get_timer(matches: &ArgMatches) -> Result<Timer> {
