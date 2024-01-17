@@ -1,3 +1,5 @@
+use std::fmt;
+
 use chrono::{DateTime, Local};
 use crossterm::event::{KeyCode, KeyEvent, KeyEventKind, KeyModifiers};
 
@@ -16,6 +18,30 @@ pub enum State {
     Quitting,
 }
 
+impl fmt::Display for State {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            State::Waiting => write!(f, "Waiting"),
+            State::Running => write!(f, "Running"),
+            State::Pausing => write!(f, "Pausing"),
+            State::Finished => write!(f, "Finished"),
+            State::Quitting => write!(f, "Quitting"),
+        }
+    }
+}
+
+impl State {
+    pub fn button(&self) -> &str {
+        match self {
+            State::Waiting => "Restart: 'Ctrl+R'",
+            State::Running => "Start:   Type",
+            State::Pausing => "Pause:   'Ctrl+P'",
+            State::Finished => "Stop:    'Ctrl+C'",
+            State::Quitting => "Quit:    'Ctrl+C'",
+        }
+    }
+}
+
 pub struct Exercise {
     pub time: DateTime<Local>,
 
@@ -29,7 +55,6 @@ pub struct Exercise {
 
 impl Exercise {
     pub fn build(timer: Timer, content: Content, settings: Settings) -> Exercise {
-        // SET THE FIRST PROMPT!
         let prompt = Prompt::new(
             content
                 .get_prompt()

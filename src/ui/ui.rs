@@ -58,20 +58,31 @@ pub fn render(exercise: &Exercise, f: &mut Frame) {
     f.render_widget(timer(&exercise.timer), top_left[0]);
     f.render_widget(progress_bar(&exercise.content), top_left[1]);
     f.render_widget(ratio_bar(&exercise.prompt), top_left[2]);
-    f.render_widget(info(), top_right[0]);
+    f.render_widget(info(&exercise), top_right[0]);
     f.render_widget(wpm(&exercise), top_right[1]);
     f.render_widget(prompt(exercise), inner[1]);
     f.render_widget(typed(exercise), inner[2]);
 }
 
-fn info() -> Paragraph<'static> {
-    /// make this dynamic
-    let options = vec![
-        "Start:    Type",
-        "Stop:    'Esc'",
-        "Restart: 'Ctrl+R'",
-        "Quit:    'Ctrl+C'",
-    ];
+fn info(exercise: &Exercise) -> Paragraph {
+    let options: Vec<&str> = match exercise.state {
+        State::Waiting => vec![State::Running.button(), "", "", State::Quitting.button()],
+        State::Running => vec![
+            State::Pausing.button(),
+            "",
+            State::Waiting.button(),
+            State::Finished.button(),
+        ],
+        State::Pausing => vec![
+            State::Running.button(),
+            "",
+            State::Waiting.button(),
+            State::Finished.button(),
+        ],
+        State::Finished => vec!["", "", State::Waiting.button(), State::Quitting.button()],
+        State::Quitting => vec![],
+    };
+
     let text = Text::from(
         options
             .iter()
@@ -80,7 +91,7 @@ fn info() -> Paragraph<'static> {
     );
     Paragraph::new(text).block(
         Block::default()
-            .title("Options")
+            .title(exercise.state.to_string())
             .title_alignment(Alignment::Left)
             .borders(Borders::ALL),
     )
