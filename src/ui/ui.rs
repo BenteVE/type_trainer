@@ -7,7 +7,12 @@ use ratatui::{
     widgets::{Block, BorderType, Borders, LineGauge, Padding, Paragraph, Wrap},
 };
 
-use crate::exercise::{content::Content, exercise::Exercise, prompt::Prompt, timer::Timer};
+use crate::exercise::{
+    content::Content,
+    exercise::{Exercise, State},
+    prompt::Prompt,
+    timer::Timer,
+};
 
 pub fn render(exercise: &Exercise, f: &mut Frame) {
     let border = Block::default()
@@ -60,6 +65,7 @@ pub fn render(exercise: &Exercise, f: &mut Frame) {
 }
 
 fn info() -> Paragraph<'static> {
+    /// make this dynamic
     let options = vec![
         "Start:    Type",
         "Stop:    'Esc'",
@@ -121,13 +127,18 @@ fn ratio_bar(prompt: &Prompt) -> LineGauge {
 }
 
 fn prompt(exercise: &Exercise) -> Paragraph {
-    let mut text = match exercise.settings.highlight {
-        true => get_prompt_highlight(&exercise.prompt),
-        false => get_prompt(&exercise.prompt),
+    let text = match exercise.state {
+        State::Waiting | State::Running | State::Pausing => {
+            let mut styled = match exercise.settings.highlight {
+                true => get_prompt_highlight(&exercise.prompt),
+                false => get_prompt(&exercise.prompt),
+            };
+            // Append the following lines without extra styling
+            styled.extend(exercise.content.get_next_prompts());
+            styled
+        }
+        _ => Text::from(""),
     };
-
-    // Append the following lines without extra styling
-    text.extend(exercise.content.get_next_prompts());
 
     Paragraph::new(text).wrap(Wrap { trim: false }).block(
         Block::default()
@@ -184,14 +195,14 @@ fn get_prompt_highlight(prompt: &Prompt) -> Text {
 
 /// The typing area
 fn typed(exercise: &Exercise) -> Paragraph {
-    let typed = match exercise.settings.blind {
-        true => Text::from(""),
-        false => {
+    let typed = match exercise.state {
+        State::Waiting | State::Running | State::Pausing if !exercise.settings.blind => {
             let mut spans = vec![Span::from(exercise.prompt.typed.iter().collect::<String>())];
             // Add a cursor to the typed text
             spans.push(Span::from(symbols::block::FULL).add_modifier(Modifier::SLOW_BLINK));
             Text::from(Line::from(spans))
         }
+        _ => Text::from(""),
     };
 
     Paragraph::new(typed)
