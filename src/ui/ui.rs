@@ -8,10 +8,7 @@ use ratatui::{
 };
 
 use crate::exercise::{
-    content::Content,
-    exercise::{Exercise, State},
-    prompt::Prompt,
-    timer::Timer,
+    content::Content, exercise::Exercise, prompt::Prompt, state::State, timer::Timer,
 };
 
 pub fn render(exercise: &Exercise, f: &mut Frame) {

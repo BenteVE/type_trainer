@@ -1,7 +1,7 @@
 use anyhow::{Ok, Result};
 use ratatui::{backend::CrosstermBackend, Terminal};
 use type_trainer::{
-    exercise::exercise::State,
+    exercise::state::State,
     parser::Parser,
     ui::{
         event::{Event, EventHandler},

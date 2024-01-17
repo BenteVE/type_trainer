@@ -6,6 +6,7 @@ pub mod exercise {
     pub mod prompt;
     pub mod settings;
     pub mod timer;
+    pub mod state;
 }
 
 pub mod ui {
