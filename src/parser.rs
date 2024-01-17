@@ -4,8 +4,6 @@ use crate::exercise::{content::Content, exercise::Exercise, settings::Settings, 
 use clap::{command, value_parser, Arg, ArgAction, ArgMatches};
 
 use anyhow::{anyhow, Ok, Result};
-use rand::{seq::SliceRandom, thread_rng};
-
 pub struct Parser;
 
 impl Parser {
@@ -157,11 +155,7 @@ impl Parser {
             }
         }
 
-        // Shuffle the prompts if necessary
         let random = matches.get_flag("random");
-        if random {
-            prompts.shuffle(&mut thread_rng())
-        }
 
         Ok(Content::build(path.to_owned(), prompts, random, words))
     }

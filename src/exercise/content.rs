@@ -1,3 +1,4 @@
+use rand::{seq::SliceRandom, thread_rng};
 use serde::ser::{Serialize, SerializeStruct, Serializer};
 use std::path::PathBuf;
 
@@ -12,17 +13,30 @@ pub struct Content {
 
 impl Content {
     pub fn build(file_path: PathBuf, content: Vec<String>, random: bool, words: bool) -> Content {
-        Content {
+        let mut content = Content {
             file_path,
             content,
             prompt_index: 0,
             words,
             random,
+        };
+
+        if content.random {
+            content.shuffle_prompts();
         }
+
+        content
+    }
+
+    pub fn shuffle_prompts(&mut self) {
+        self.content.shuffle(&mut thread_rng())
     }
 
     pub fn reset(&mut self) {
         self.prompt_index = 0;
+        if self.random {
+            self.shuffle_prompts();
+        }
     }
 
     pub fn next_prompt(&mut self) {
