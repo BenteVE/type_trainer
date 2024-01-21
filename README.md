@@ -3,7 +3,7 @@
 A program to train you to become faster and more accurate at typing.
 The program reads a text file and provides prompt
 
-![options](doc/type-trainer.gif?raw=true)
+![options](doc/vhs/type-trainer.gif?raw=true)
 
 ## Options
 
