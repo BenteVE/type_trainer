@@ -10,8 +10,10 @@ use type_trainer::{
 };
 
 fn main() -> Result<()> {
+    // Create the arguments used by the program.
     let matches = Parser::new();
 
+    // Create the exercise from the given arguments.
     let mut exercise = Parser::get_exercise(&matches)?;
 
     // Initialize the terminal user interface.
@@ -33,7 +35,7 @@ fn main() -> Result<()> {
         // Render the user interface.
         tui.draw(&mut exercise)?;
 
-        // Handle events.
+        // Handle events. For this program, only the key events are important.
         match tui.events.next()? {
             Event::Tick => {}
             Event::Key(key_event) => exercise.update(key_event),

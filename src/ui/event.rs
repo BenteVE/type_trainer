@@ -1,11 +1,10 @@
+use anyhow::Result;
+use crossterm::event::{self, Event as CrosstermEvent, KeyEvent, MouseEvent};
 use std::{
     sync::mpsc,
     thread,
     time::{Duration, Instant},
 };
-
-use anyhow::Result;
-use crossterm::event::{self, Event as CrosstermEvent, KeyEvent, MouseEvent};
 
 /// Terminal events.
 #[derive(Clone, Copy, Debug)]

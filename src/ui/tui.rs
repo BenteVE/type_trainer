@@ -1,13 +1,10 @@
-use std::{io, panic};
-
 use anyhow::Result;
 use crossterm::{
     event::{DisableMouseCapture, EnableMouseCapture},
     terminal::{self, EnterAlternateScreen, LeaveAlternateScreen},
 };
-
+use std::{io, panic};
 pub type CrosstermTerminal = ratatui::Terminal<ratatui::backend::CrosstermBackend<std::io::Stderr>>;
-
 use crate::{exercise::exercise::Exercise, ui::event::EventHandler, ui::ui};
 
 /// Representation of a terminal user interface.
@@ -22,7 +19,7 @@ pub struct Tui {
 }
 
 impl Tui {
-    /// Constructs a new instance of [`Tui`].
+    /// Constructs a new instance of [Tui].
     pub fn new(terminal: CrosstermTerminal, events: EventHandler) -> Self {
         Self { terminal, events }
     }
@@ -47,10 +44,10 @@ impl Tui {
         Ok(())
     }
 
-    /// [`Draw`] the terminal interface by [`rendering`] the widgets.
+    /// [Draw] the terminal interface by [rendering] the widgets.
     ///
-    /// [`Draw`]: tui::Terminal::draw
-    /// [`rendering`]: crate::ui:render
+    /// [Draw]: crate::ui::tui::Tui::draw
+    /// [rendering]: crate::ui::ui::render
     pub fn draw(&mut self, exercise: &mut Exercise) -> Result<()> {
         self.terminal.draw(|frame| ui::render(exercise, frame))?;
         Ok(())

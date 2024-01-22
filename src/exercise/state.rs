@@ -1,5 +1,6 @@
 use std::fmt;
 
+/// The possible states of the application.
 #[derive(PartialEq, Eq)]
 pub enum State {
     Waiting,

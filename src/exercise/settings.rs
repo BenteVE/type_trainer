@@ -1,13 +1,14 @@
 use serde::ser::{Serialize, SerializeStruct, Serializer};
 
-// The settings are created before the exercise starts and
-// cannot be changed during the exercise
+/// Store the settings of the exercise based on the arguments that were given.
+///
+/// These settings should not be changed during the execution of the application.
 pub struct Settings {
     pub highlight: bool, // Highlight the correct letters in green and the mistakes in red
     pub blind: bool,     // Hide the text when the user is typing
     pub backspace: bool, // Allow the use of the backspace key
     pub auto: bool,      // Automatically progress to the next line without pressing enter
-    pub terminate: Option<usize>,
+    pub terminate: Option<usize>, // Terminate the exercise after a given amount of mistakes
 }
 impl Settings {
     pub fn build(
@@ -27,6 +28,7 @@ impl Settings {
     }
 }
 
+/// Serialize the settings
 impl Serialize for Settings {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where

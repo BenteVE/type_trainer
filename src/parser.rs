@@ -1,12 +1,11 @@
-use std::{fs, path::PathBuf, time::Duration};
-
 use crate::exercise::{content::Content, exercise::Exercise, settings::Settings, timer::Timer};
-use clap::{command, value_parser, Arg, ArgAction, ArgMatches};
-
 use anyhow::{anyhow, Ok, Result};
+use clap::{command, value_parser, Arg, ArgAction, ArgMatches};
+use std::{fs, path::PathBuf, time::Duration};
 pub struct Parser;
 
 impl Parser {
+    /// Specifies all possible command line arguments for the application
     pub fn new() -> ArgMatches {
         command!()
             .arg(
@@ -16,13 +15,6 @@ impl Parser {
                     .required(true)
                     .value_parser(value_parser!(PathBuf)),
             )
-            // random and start should not exist together
-            // remove split option argument text (long texts can't be show anyway)
-            // instead: show 0..=10 lines in the prompt => (for random, we should select multiple lines at the same time?)
-            // whenever enter is pressed, we should remove 1 line
-            // change random to just shuffle the vector instead of keep selecting the lines?
-            // Pro: progress bar would work
-            // Con: could take a long time for long texts (need extra crate)
             .arg(
                 Arg::new("start")
                     .long("start")
@@ -110,7 +102,7 @@ impl Parser {
             .get_matches()
     }
 
-    // parse the command line arguments to create the settings
+    /// Parse the command line arguments to create the [Exercise]
     pub fn get_exercise(matches: &ArgMatches) -> Result<Exercise> {
         let timer = Self::get_timer(matches)?;
         let content = Self::get_content(matches)?;
@@ -119,6 +111,7 @@ impl Parser {
         Ok(Exercise::build(timer, content, settings))
     }
 
+    /// Parse the command line arguments to create the [Content]
     pub fn get_content(matches: &ArgMatches) -> Result<Content> {
         let path = matches
             .get_one::<PathBuf>("path")
@@ -160,7 +153,7 @@ impl Parser {
         Ok(Content::build(path.to_owned(), prompts, random, words))
     }
 
-    // parse the command line arguments to create the settings
+    /// Parse the command line arguments to create the [Settings]
     pub fn get_settings(matches: &ArgMatches) -> Result<Settings> {
         let backspace = matches.get_flag("backspace");
         let highlight = matches.get_flag("highlight");
@@ -176,6 +169,7 @@ impl Parser {
         ))
     }
 
+    /// Parse the command line arguments to create the [Timer]
     pub fn get_timer(matches: &ArgMatches) -> Result<Timer> {
         let duration = match matches.get_one::<u16>("duration") {
             Some(d) => Some(Duration::from_secs(*d as u64)),

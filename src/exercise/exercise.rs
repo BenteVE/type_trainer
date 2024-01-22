@@ -1,26 +1,22 @@
-use std::{fs::OpenOptions, io::Write};
-
+use super::{content::Content, prompt::Prompt, state::State, timer::Timer};
+use crate::exercise::settings::Settings;
 use chrono::{DateTime, Local};
 use crossterm::event::{KeyCode, KeyEvent, KeyEventKind, KeyModifiers};
-
 use serde::ser::{Serialize, SerializeStruct, Serializer};
+use std::{fs::OpenOptions, io::Write};
 
-use crate::exercise::settings::Settings;
-
-use super::{content::Content, prompt::Prompt, state::State, timer::Timer};
-
+/// The main structure of the exercise that contains all the parts of the type trainer.
 pub struct Exercise {
     pub time: DateTime<Local>,
-
     pub timer: Timer,
     pub content: Content,
     pub settings: Settings,
     pub prompt: Prompt,
-
     pub state: State,
 }
 
 impl Exercise {
+    /// Builds a new exercise
     pub fn build(timer: Timer, content: Content, settings: Settings) -> Exercise {
         let prompt = Prompt::new(
             content
@@ -38,8 +34,26 @@ impl Exercise {
     }
 
     /// Handles the tick event of the terminal.
+    ///
+    /// This function is unused in the current implementation of the program.
     pub fn tick(&self) {}
 
+    /// Handles key events and changes the state of the application accordingly.
+    ///
+    /// Any [KeyEvent] with the [KeyModifiers::CONTROL] modifier will be used to change the state of the application.
+    /// Events without this modifier will be interpreted as input for the exercise prompt.
+    ///
+    /// The application will stay in [State::Waiting] until the user starts typing.
+    /// The application will then progress to [State::Running].
+    /// The user can also press the quit button to immediately progress to [State::Quitting] that will shut down the program.
+    ///
+    /// When the exercise is finished, the application will automatically progress from [State::Running] to [State::Finished].
+    /// At any time during [State::Running], the user can also enter the following states by pressing the related buttons:
+    /// - [State::Finished] by pressing the stop button
+    /// - [State::Waiting] by pressing the restart button
+    /// - [State::Pausing] by pressing the pause button, the application will wait in this state until the user starts typing again
+    ///
+    /// From [State::Finished] the user can quit the application or restart the exercise.
     pub fn update(&mut self, key_event: KeyEvent) {
         if key_event.kind == KeyEventKind::Press {
             if key_event.modifiers == KeyModifiers::CONTROL {
@@ -91,6 +105,7 @@ impl Exercise {
         }
     }
 
+    /// Handles the press of [KeyCode::Enter]
     fn press_enter(&mut self) {
         self.prompt.finish();
 
@@ -102,16 +117,25 @@ impl Exercise {
         }
     }
 
+    /// Handles the press of [KeyCode::Backspace]
     fn press_backspace(&mut self) {
         if self.settings.backspace {
             self.prompt.remove_char();
         }
     }
 
+    /// Handles the press of any [KeyCode::Char]
     fn press_char(&mut self, c: char) {
         self.prompt.type_char(c);
     }
 
+    /// Calculate the current WPM score.
+    ///
+    /// For the standard calculation of a word per minute score,
+    /// each word is set to equal any 5 characters.
+    ///
+    /// In the current implementation for this calculation, the correct characters are subtracted by the amount of times the backspace was used.
+    /// This implementation should change so removing faulty characters does not subtract from the WPM score.
     pub fn calculate_wpm(&self) -> usize {
         // we only count the correct characters for this calculation
         // we subtract the backspace to avoid having a high wpm by typing and removing the same letters
@@ -129,16 +153,19 @@ impl Exercise {
         (words / minutes).round() as usize
     }
 
+    /// Handles the transition to [State::Running]
     fn start(&mut self) {
         self.state = State::Running;
         self.timer.start();
     }
 
+    /// Handles the transition to [State::Pausing]
     fn pause(&mut self) {
         self.state = State::Pausing;
         self.timer.stop();
     }
 
+    /// Handles the transition to [State::Waiting]
     fn restart(&mut self) {
         self.state = State::Waiting;
         self.time = Local::now();
@@ -148,6 +175,7 @@ impl Exercise {
         self.prompt = Prompt::new(self.content.get_prompt().unwrap());
     }
 
+    /// Handles the transition to [State::Finished]
     fn stop(&mut self) {
         self.timer.stop();
         self.state = State::Finished;
@@ -155,6 +183,18 @@ impl Exercise {
         self.save();
     }
 
+    /// Handles the transition to [State::Quitting]
+    pub fn quit(&mut self) {
+        self.state = State::Quitting;
+    }
+
+    pub fn check_timer(&mut self) {
+        if self.timer.timer_expired() {
+            self.stop();
+        }
+    }
+
+    /// Saves the stats and the settings of the [Exercise] in a .json file.
     fn save(&self) {
         if let Ok(mut s) = serde_json::to_string(self) {
             s.push('\n');
@@ -170,18 +210,9 @@ impl Exercise {
             }
         }
     }
-
-    pub fn quit(&mut self) {
-        self.state = State::Quitting;
-    }
-
-    pub fn check_timer(&mut self) {
-        if self.timer.timer_expired() {
-            self.stop();
-        }
-    }
 }
 
+/// Serializes the [Exercise] to a .json string
 impl Serialize for Exercise {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where

@@ -1,3 +1,6 @@
+use crate::exercise::{
+    content::Content, exercise::Exercise, prompt::Prompt, state::State, timer::Timer,
+};
 use ratatui::{
     layout::{Constraint, Direction, Layout},
     prelude::{Alignment, Frame},
@@ -7,10 +10,7 @@ use ratatui::{
     widgets::{Block, BorderType, Borders, LineGauge, Padding, Paragraph, Wrap},
 };
 
-use crate::exercise::{
-    content::Content, exercise::Exercise, prompt::Prompt, state::State, timer::Timer,
-};
-
+/// Renders the Ratatui widgets on the screen based on the state of the [Exercise]
 pub fn render(exercise: &Exercise, f: &mut Frame) {
     let border = Block::default()
         .title(" Type Trainer ")
@@ -61,6 +61,7 @@ pub fn render(exercise: &Exercise, f: &mut Frame) {
     f.render_widget(typed(exercise), inner[2]);
 }
 
+/// Create the widget with the state of the application and the buttons to change the state
 fn info(exercise: &Exercise) -> Paragraph {
     let options: Vec<&str> = match exercise.state {
         State::Waiting => vec![State::Running.button(), "", "", State::Quitting.button()],
@@ -94,6 +95,7 @@ fn info(exercise: &Exercise) -> Paragraph {
     )
 }
 
+/// Create the widget that displays the current wpm
 fn wpm(exercise: &Exercise) -> Paragraph {
     Paragraph::new(format!("{} WPM", exercise.calculate_wpm()))
         .block(
@@ -105,8 +107,7 @@ fn wpm(exercise: &Exercise) -> Paragraph {
         .wrap(Wrap { trim: false })
 }
 
-// if there is some duration: give the ratio to that duration
-// otherwise reset every minute
+/// Create the timer widget that shows the time since the start of the [Exercise]
 fn timer(timer: &Timer) -> LineGauge {
     LineGauge::default()
         .block(Block::default().borders(Borders::ALL).title("Timer"))
@@ -116,7 +117,7 @@ fn timer(timer: &Timer) -> LineGauge {
         .label(timer.get_time_label())
 }
 
-/// Used to show how many prompts are remaining
+/// Create the progress widget that shows the percentage of prompts in the [Content] that are finished
 fn progress_bar(content: &Content) -> LineGauge {
     LineGauge::default()
         .block(Block::default().borders(Borders::ALL).title("Progress"))
@@ -125,7 +126,7 @@ fn progress_bar(content: &Content) -> LineGauge {
         .line_set(symbols::line::THICK)
 }
 
-/// Used how many prompts are left
+/// Create the widget that shows the ratio of correctly typed characters to the total amount of typed characters
 fn ratio_bar(prompt: &Prompt) -> LineGauge {
     LineGauge::default()
         .block(Block::default().borders(Borders::ALL).title("Ratio"))
@@ -136,6 +137,7 @@ fn ratio_bar(prompt: &Prompt) -> LineGauge {
 
 const ORANGE: Color = Color::Rgb(255, 140, 0);
 
+/// Create the widget that shows the current prompt and the following prompts
 fn prompt(exercise: &Exercise) -> Paragraph {
     let text = match exercise.state {
         State::Waiting | State::Running | State::Pausing => {
@@ -161,12 +163,15 @@ fn prompt(exercise: &Exercise) -> Paragraph {
     )
 }
 
+/// Use the [Prompt] to create styled text without highlighting
 fn get_prompt(prompt: &Prompt) -> Text {
     Text::from(Line::from(
         Span::from(prompt.prompt.iter().collect::<String>()).fg(ORANGE),
     ))
 }
 
+/// Use the [Prompt] to create styled text with highlighting
+///
 /// The text of the current prompt is orange
 /// Highlight the prompt in green if the typed text is correct
 /// Highlight the prompt in red if the typed text is wrong
@@ -209,7 +214,7 @@ fn get_prompt_highlight(prompt: &Prompt) -> Text {
     Text::from(Line::from(prompt_styled))
 }
 
-/// The typing area
+/// Create a widget that shows the text typed by the user for the current prompt
 fn typed(exercise: &Exercise) -> Paragraph {
     let typed = match exercise.state {
         State::Waiting | State::Running | State::Pausing if !exercise.settings.blind => {
@@ -231,6 +236,7 @@ fn typed(exercise: &Exercise) -> Paragraph {
         .wrap(Wrap { trim: false })
 }
 
+/// Used to change the timer widget to show dots instead of a full line
 fn linegauge_set_dots() -> symbols::line::Set {
     symbols::line::Set {
         horizontal: symbols::DOT,
