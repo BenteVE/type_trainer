@@ -47,7 +47,7 @@ impl Tui {
     /// [Draw] the terminal interface by [rendering] the widgets.
     ///
     /// [Draw]: crate::ui::tui::Tui::draw
-    /// [rendering]: crate::ui::ui::render
+    /// [rendering]: crate::ui::render::render
     pub fn draw(&mut self, exercise: &mut Exercise) -> Result<()> {
         self.terminal.draw(|frame| render::render(exercise, frame))?;
         Ok(())

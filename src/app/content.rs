@@ -52,7 +52,7 @@ impl Content {
     ///
     /// This format makes it easier for the [Prompt] to compare the individual typed characters with the corresponding characters from the prompt.
     ///
-    /// [Prompt]: crate::exercise::prompt::Prompt
+    /// [Prompt]: crate::app::prompt::Prompt
     pub fn get_prompt(&self) -> Option<Vec<char>> {
         if let Some(s) = self.content.get(self.prompt_index) {
             Some(s.chars().collect())

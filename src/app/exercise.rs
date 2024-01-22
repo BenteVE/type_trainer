@@ -5,7 +5,7 @@ use crossterm::event::{KeyCode, KeyEvent, KeyEventKind, KeyModifiers};
 use serde::ser::{Serialize, SerializeStruct, Serializer};
 use std::{fs::OpenOptions, io::Write};
 
-/// The main structure of the exercise that contains all the parts of the type trainer.
+/// The main structure of the application that combines all the parts of the type trainer.
 pub struct Exercise {
     pub time: DateTime<Local>,
     pub timer: Timer,
