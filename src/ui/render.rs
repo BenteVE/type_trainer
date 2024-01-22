@@ -1,4 +1,4 @@
-use crate::exercise::{
+use crate::app::{
     content::Content, exercise::Exercise, prompt::Prompt, state::State, timer::Timer,
 };
 use ratatui::{

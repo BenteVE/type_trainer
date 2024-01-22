@@ -1,8 +1,8 @@
 use anyhow::{Ok, Result};
 use ratatui::{backend::CrosstermBackend, Terminal};
 use type_trainer::{
-    exercise::state::State,
-    parser::Parser,
+    app::state::State,
+    parser,
     ui::{
         event::{Event, EventHandler},
         tui::Tui,
@@ -11,10 +11,10 @@ use type_trainer::{
 
 fn main() -> Result<()> {
     // Create the arguments used by the program.
-    let matches = Parser::new();
+    let matches = parser::create_commands();
 
     // Create the exercise from the given arguments.
-    let mut exercise = Parser::get_exercise(&matches)?;
+    let mut exercise = parser::get_exercise(&matches)?;
 
     // Initialize the terminal user interface.
     let backend = CrosstermBackend::new(std::io::stderr());

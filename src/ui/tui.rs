@@ -5,7 +5,7 @@ use crossterm::{
 };
 use std::{io, panic};
 pub type CrosstermTerminal = ratatui::Terminal<ratatui::backend::CrosstermBackend<std::io::Stderr>>;
-use crate::{exercise::exercise::Exercise, ui::event::EventHandler, ui::ui};
+use crate::{app::exercise::Exercise, ui::event::EventHandler, ui::render};
 
 /// Representation of a terminal user interface.
 ///
@@ -49,7 +49,7 @@ impl Tui {
     /// [Draw]: crate::ui::tui::Tui::draw
     /// [rendering]: crate::ui::ui::render
     pub fn draw(&mut self, exercise: &mut Exercise) -> Result<()> {
-        self.terminal.draw(|frame| ui::render(exercise, frame))?;
+        self.terminal.draw(|frame| render::render(exercise, frame))?;
         Ok(())
     }
 

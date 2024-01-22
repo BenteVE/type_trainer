@@ -1,5 +1,5 @@
 use super::{content::Content, prompt::Prompt, state::State, timer::Timer};
-use crate::exercise::settings::Settings;
+use crate::app::settings::Settings;
 use chrono::{DateTime, Local};
 use crossterm::event::{KeyCode, KeyEvent, KeyEventKind, KeyModifiers};
 use serde::ser::{Serialize, SerializeStruct, Serializer};

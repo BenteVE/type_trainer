@@ -2,8 +2,8 @@
 /// and the functions to parse the given arguments into the corresponding exercise.
 pub mod parser;
 
-/// Contains the logic of the actual exercise.
-pub mod exercise {
+/// Contains the logic of the type trainer application.
+pub mod app {
     pub mod content;
     pub mod exercise;
     pub mod prompt;
@@ -16,5 +16,5 @@ pub mod exercise {
 pub mod ui {
     pub mod event;
     pub mod tui;
-    pub mod ui;
+    pub mod render;
 }
