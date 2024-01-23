@@ -2,7 +2,7 @@
 name = "type_trainer"
 version = "0.1.0"
 edition = "2021"
-description = "A terminal typing trainer"
+description = "A type trainer in the terminal"
 authors = ["Bente Van Eeckhoudt"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
