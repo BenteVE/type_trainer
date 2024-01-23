@@ -9,7 +9,7 @@ pub fn create_commands() -> ArgMatches {
             .arg(
                 Arg::new("path")
                     .index(1)
-                    .help("The path to the exercise file")
+                    .help("The path to the file you want to use for training")
                     .required(true)
                     .value_parser(value_parser!(PathBuf)),
             )
@@ -17,16 +17,16 @@ pub fn create_commands() -> ArgMatches {
                 Arg::new("start")
                     .long("start")
                     .short('s')
-                    .help("Determines the line to start at")
+                    .help("Select the starting line of the exercise")
                     .required(false)
                     .action(ArgAction::Set)
                     .value_parser(value_parser!(u32).range(0..)),
             )
             .arg(
-                Arg::new("lines")
-                    .long("lines")
-                    .short('l')
-                    .help("Limit the amount of lines that are prompted.")
+                Arg::new("prompts")
+                    .long("prompts")
+                    .short('p')
+                    .help("Limit the amount of prompts")
                     .required(false)
                     .action(ArgAction::Set)
                     .value_parser(value_parser!(u32).range(1..)),
@@ -35,6 +35,7 @@ pub fn create_commands() -> ArgMatches {
                 Arg::new("duration")
                     .long("duration")
                     .short('d')
+                    .value_name("seconds")
                     .help("Limit of the duration of the exercise in seconds")
                     .required(false)
                     .action(ArgAction::Set)
@@ -44,6 +45,7 @@ pub fn create_commands() -> ArgMatches {
                 Arg::new("terminate")
                     .long("terminate")
                     .short('t')
+                    .value_name("mistakes")
                     .help("Terminate the exercise after the given amount of mistakes are made")
                     .required(false)
                     .action(ArgAction::Set)
@@ -53,7 +55,7 @@ pub fn create_commands() -> ArgMatches {
                 Arg::new("words")
                     .long("words")
                     .short('w')
-                    .help("Split every word of the text.")
+                    .help("Split every word of the text into a separate prompt")
                     .required(false)
                     .action(ArgAction::SetTrue),
             )
@@ -61,7 +63,7 @@ pub fn create_commands() -> ArgMatches {
                 Arg::new("random")
                     .long("random")
                     .short('r')
-                    .help("Shuffle the prompts in a random order.")
+                    .help("Shuffle the prompts in a random order")
                     .required(false)
                     .action(ArgAction::SetTrue),
             )
@@ -93,7 +95,7 @@ pub fn create_commands() -> ArgMatches {
                 Arg::new("auto")
                     .long("auto")
                     .short('a')
-                    .help("Automatically progress to the next line without pressing enter.")
+                    .help("Automatically progress to the next line without pressing enter")
                     .required(false)
                     .action(ArgAction::SetTrue),
             )
@@ -139,10 +141,10 @@ pub fn get_content(matches: &ArgMatches) -> Result<Content> {
     };
 
     // Shorten the amount of lines if necessary
-    if let Some(&lines) = matches.get_one::<u32>("lines") {
-        let lines = lines as usize;
-        if lines < prompts.len() {
-            prompts = prompts[..lines].to_vec();
+    if let Some(&p) = matches.get_one::<u32>("prompts") {
+        let p = p as usize;
+        if p < prompts.len() {
+            prompts = prompts[..p].to_vec();
         }
     }
 
