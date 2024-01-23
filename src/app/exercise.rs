@@ -133,16 +133,9 @@ impl Exercise {
     ///
     /// For the standard calculation of a word per minute score,
     /// each word is set to equal any 5 characters.
-    ///
-    /// In the current implementation for this calculation, the correct characters are subtracted by the amount of times the backspace was used.
-    /// This implementation should change so removing faulty characters does not subtract from the WPM score.
+    /// Only correct characters are counted.
     pub fn calculate_wpm(&self) -> usize {
-        // we only count the correct characters for this calculation
-        // we subtract the backspace to avoid having a high wpm by typing and removing the same letters
-        let letters = self
-            .prompt
-            .count_correct
-            .saturating_sub(self.prompt.count_backspace);
+        let letters = self.prompt.count_correct - self.prompt.count_correct_remove;
 
         // for the wpm calculation, each word is 5 letters long
         let words = letters as f32 / 5 as f32;

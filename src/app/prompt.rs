@@ -4,9 +4,10 @@ use serde::ser::{Serialize, SerializeStruct, Serializer};
 pub struct Prompt {
     pub prompt: Vec<char>,
     pub typed: Vec<char>,
-    pub count_backspace: usize,
     pub count_correct: usize, // the characters do not need to be submitted for them to count
+    pub count_correct_remove: usize,
     pub count_fault: usize,
+    pub count_fault_remove: usize,
 }
 
 impl Prompt {
@@ -15,9 +16,10 @@ impl Prompt {
         Prompt {
             prompt: prompt,
             typed: Vec::new(),
-            count_backspace: 0,
             count_correct: 0,
+            count_correct_remove: 0,
             count_fault: 0,
+            count_fault_remove: 0,
         }
     }
 
@@ -68,9 +70,12 @@ impl Prompt {
 
     /// Remove a character from the prompt and update the counter
     pub fn remove_char(&mut self) {
-        if self.typed.len() > 0 {
-            self.typed.pop();
-            self.count_backspace += 1;
+        if let Some(c) = self.typed.pop() {
+            if self.typed.len() >= self.prompt.len() || c != self.prompt[self.typed.len()] {
+                self.count_fault_remove += 1;
+            } else {
+                self.count_correct_remove += 1;
+            }
         }
     }
 }
@@ -81,10 +86,11 @@ impl Serialize for Prompt {
     where
         S: Serializer,
     {
-        let mut state = serializer.serialize_struct("Settings", 5)?;
-        state.serialize_field("count_backspace", &self.count_backspace)?;
+        let mut state = serializer.serialize_struct("Prompt", 4)?;
         state.serialize_field("count_correct", &self.count_correct)?;
+        state.serialize_field("count_correct_remove", &self.count_correct_remove)?;
         state.serialize_field("count_fault", &self.count_fault)?;
+        state.serialize_field("count_fault_remove", &self.count_fault_remove)?;
         state.end()
     }
 }
