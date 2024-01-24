@@ -81,7 +81,11 @@ impl Content {
     /// The text is split after every line, or every word, if the flag is set to true.
     pub fn into_prompts(content: String, words: bool) -> Vec<String> {
         match words {
-            false => content.lines().map(|s| s.to_string()).collect(),
+            false => content
+                .lines()
+                .map(|s| s.trim().to_string())
+                .filter(|s| !s.is_empty())
+                .collect(),
             true => content
                 .split_whitespace()
                 .map(|s| s.to_string())
