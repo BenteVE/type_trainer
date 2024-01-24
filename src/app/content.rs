@@ -80,20 +80,14 @@ impl Content {
     ///
     /// The text is split after every line, or every word, if the flag is set to true.
     pub fn into_prompts(content: String, words: bool) -> Vec<String> {
-        let prompts: Vec<String> = match words {
+        match words {
+            false => content.lines().map(|s| s.to_string()).collect(),
             true => content
-                .split([' ', '\n'])
-                .map(|s| s.to_owned())
+                .split_whitespace()
+                .map(|s| s.to_string())
                 .filter(|s| !s.is_empty())
                 .collect(),
-            false => content
-                .split(['\n'])
-                .map(|s| s.to_owned())
-                .filter(|s| !s.is_empty())
-                .collect(),
-        };
-
-        prompts
+        }
     }
 }
 
