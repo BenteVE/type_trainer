@@ -92,13 +92,13 @@ impl Exercise {
                         KeyCode::Backspace => self.press_backspace(),
                         _ => {}
                     };
-                }
-                if self.settings.auto && self.prompt.prompt.len() == self.prompt.typed.len() {
-                    self.press_enter();
-                }
-                if let Some(t) = self.settings.terminate {
-                    if self.prompt.count_fault >= t {
-                        self.stop();
+                    if self.settings.auto && (self.prompt.prompt.len() == self.prompt.typed.len()) {
+                        self.press_enter();
+                    }
+                    if let Some(t) = self.settings.terminate {
+                        if self.prompt.count_fault >= t {
+                            self.stop();
+                        }
                     }
                 }
             }
