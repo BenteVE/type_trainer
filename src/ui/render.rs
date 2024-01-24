@@ -183,27 +183,24 @@ fn get_prompt_highlight(prompt: &Prompt) -> Text {
 
     // check for each letter if it is correct and style accordingly
     for i in 0..usize::min(typed.len(), prompt.len()) {
-        match prompt[i] == typed[i] {
-            true => prompt_styled.push(
-                Span::from(prompt[i].to_string())
-                    .bg(Color::Green)
-                    .fg(ORANGE),
-            ),
-            false => {
-                prompt_styled.push(Span::from(prompt[i].to_string()).bg(Color::Red).fg(ORANGE))
-            }
-        };
+        prompt_styled.push(
+            Span::from(prompt[i].to_string())
+                .bg(match prompt[i] == typed[i] {
+                    true => Color::Green,
+                    false => Color::Red,
+                })
+                .fg(ORANGE),
+        )
     }
     // if typed is longer than prompt, we add red spaces for each unnecessary letter
     if typed.len() > prompt.len() {
         prompt_styled.push(
             Span::from(
-                std::iter::repeat(" ")
+                std::iter::repeat(symbols::block::FULL)
                     .take(typed.len() - prompt.len())
                     .collect::<String>(),
             )
-            .bg(Color::Red)
-            .fg(ORANGE),
+            .fg(Color::Red),
         )
     }
     // The rest of the line should not be styled
