@@ -48,6 +48,11 @@ impl Prompt {
         }
     }
 
+    /// Check if the currently typed text is exactly the same as the prompt
+    pub fn is_correct(&self) -> bool {
+        self.typed == self.prompt
+    }
+
     /// Returns the ratio of the correctly typed characters compared to the total amount of typed characters.
     pub fn ratio(&self) -> f64 {
         match self.count_correct + self.count_fault {

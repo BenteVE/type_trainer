@@ -8,6 +8,7 @@ pub struct Settings {
     pub blind: bool,     // Hide the text when the user is typing
     pub backspace: bool, // Allow the use of the backspace key
     pub auto: bool,      // Automatically progress to the next line without pressing enter
+    pub correct: bool,      // Automatically progress to the next line without pressing enter
     pub terminate: Option<usize>, // Terminate the exercise after a given amount of mistakes
 }
 impl Settings {
@@ -16,6 +17,7 @@ impl Settings {
         highlight: bool,
         blind: bool,
         auto: bool,
+        correct: bool,
         terminate: Option<usize>,
     ) -> Settings {
         Settings {
@@ -23,6 +25,7 @@ impl Settings {
             blind,
             backspace,
             auto,
+            correct,
             terminate,
         }
     }
@@ -39,6 +42,7 @@ impl Serialize for Settings {
         state.serialize_field("backspace", &self.backspace)?;
         state.serialize_field("highlight", &self.highlight)?;
         state.serialize_field("auto", &self.auto)?;
+        state.serialize_field("auto", &self.correct)?;
         state.serialize_field("terminate", &self.terminate)?;
         state.end()
     }

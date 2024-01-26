@@ -107,13 +107,15 @@ impl Exercise {
 
     /// Handles the press of [KeyCode::Enter]
     fn press_enter(&mut self) {
-        self.prompt.finish();
+        if !self.settings.correct || self.prompt.is_correct() {
+            self.prompt.finish();
 
-        self.content.next_prompt();
-        if let Some(p) = self.content.get_prompt() {
-            self.prompt.set(p);
-        } else {
-            self.stop();
+            self.content.next_prompt();
+            if let Some(p) = self.content.get_prompt() {
+                self.prompt.set(p);
+            } else {
+                self.stop();
+            }
         }
     }
 

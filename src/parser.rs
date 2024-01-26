@@ -99,6 +99,14 @@ pub fn create_commands() -> ArgMatches {
                     .required(false)
                     .action(ArgAction::SetTrue),
             )
+            .arg(
+                Arg::new("correct")
+                    .long("correct")
+                    .short('c')
+                    .help("Only progress when the prompt is completely correct")
+                    .required(false)
+                    .action(ArgAction::SetTrue),
+            )
             .get_matches()
 }
 
@@ -159,13 +167,14 @@ pub fn get_settings(matches: &ArgMatches) -> Result<Settings> {
     let highlight = matches.get_flag("highlight");
     let blind = matches.get_flag("blind");
     let auto = matches.get_flag("auto");
+    let correct = matches.get_flag("correct");
     let terminate = match matches.get_one::<u16>("terminate") {
         Some(&t) => Some(t as usize),
         None => Option::None,
     };
 
     Ok(Settings::build(
-        backspace, highlight, blind, auto, terminate,
+        backspace, highlight, blind, auto, correct, terminate,
     ))
 }
 
