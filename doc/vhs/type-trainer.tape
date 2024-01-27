@@ -57,18 +57,20 @@
 
 Output type-trainer.gif
 
-Require echo
-
 Set Shell "zsh"
 Set FontSize 12
-Set Width 1200
+Set Width 1000
 Set Height 600
 
-Type "./../../target/release/type_trainer ../../doc/vhs/lorem_ipsum.txt" Enter Sleep 2s
-Type @100ms "Lorem ipsum dolor sit amet, consectetur adipiscing elit." Enter
-Type @100ms "Mauris nisi turpis, sollicitudin in elit vitae, consectetur consectetur quam." Enter
-Type @100ms "Vivamus ac purus ut dui euismod luctus." Enter
+Type @50ms"./../../target/release/type_trainer ../../doc/vhs/lorem_ipsum.txt" Enter Sleep 2s
+Type @150ms "Lorem ipsum dolor sit amet, consect"
+Type @210ms "tu" Backspace Backspace
+Type @145ms "etur adipiscing elit." Enter
+Type @160ms "Nulla facilisi." Enter
+Type @180ms "Vivamus ac purus"
+Type @200ms "ut" Backspace Backspace
+Type @130ms " ut dui euismod luctus." Enter
 
-Ctrl+c Sleep 2s
+Sleep 2s
 Ctrl+r Sleep 2s
 Ctrl+c Sleep 1s
