@@ -3,7 +3,10 @@ use crate::app::settings::Settings;
 use chrono::{DateTime, Local};
 use crossterm::event::{KeyCode, KeyEvent, KeyEventKind, KeyModifiers};
 use serde::ser::{Serialize, SerializeStruct, Serializer};
-use std::{fs::OpenOptions, io::Write};
+use std::{
+    fs::{self, OpenOptions},
+    io::Write,
+};
 
 /// The main structure of the application that combines all the parts of the type trainer.
 pub struct Exercise {
@@ -189,16 +192,24 @@ impl Exercise {
         }
     }
 
-    /// Saves the stats and the settings of the [Exercise] in a .json file.
+    /// Saves the stats and the settings of the [Exercise] in a .json file in the cache directory.
     fn save(&self) {
         if let Ok(mut s) = serde_json::to_string(self) {
             s.push('\n');
 
+            let mut path = dirs::cache_dir().expect("This should return the standard cache path");
+            path.push("type_trainer");
+
+            if !path.exists() {
+                let _ = fs::create_dir(&path);
+            }
+
+            path.push("stats.json");
             let file = OpenOptions::new()
                 .create(true)
                 .append(true)
                 .write(true)
-                .open("type_trainer.json");
+                .open(path);
 
             if let Ok(mut file) = file {
                 if let Ok(_) = file.write(s.as_bytes()) {}
