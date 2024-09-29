@@ -75,7 +75,7 @@ pub fn create_commands() -> ArgMatches {
                     .required(false)
                     .action(ArgAction::SetFalse),
             )
-            .arg(
+            .arg(   
                 Arg::new("blind")
                     .long("blind")
                     .short('b')
@@ -104,6 +104,14 @@ pub fn create_commands() -> ArgMatches {
                     .long("correct")
                     .short('c')
                     .help("Only progress when the prompt is completely correct")
+                    .required(false)
+                    .action(ArgAction::SetTrue),
+            )
+            .arg(
+                Arg::new("repeat")
+                    .long("repeat")
+                    .short('q')
+                    .help("Repeat the prompt when a mistake was made while typing it")
                     .required(false)
                     .action(ArgAction::SetTrue),
             )
@@ -168,13 +176,14 @@ pub fn get_settings(matches: &ArgMatches) -> Result<Settings> {
     let blind = matches.get_flag("blind");
     let auto = matches.get_flag("auto");
     let correct = matches.get_flag("correct");
+    let repeat = matches.get_flag("repeat");
     let terminate = match matches.get_one::<u16>("terminate") {
         Some(&t) => Some(t as usize),
         None => Option::None,
     };
 
     Ok(Settings::build(
-        backspace, highlight, blind, auto, correct, terminate,
+        backspace, highlight, blind, auto, correct, repeat, terminate,
     ))
 }
 

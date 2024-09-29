@@ -8,6 +8,7 @@ pub struct Prompt {
     pub count_correct_remove: usize,
     pub count_fault: usize,
     pub count_fault_remove: usize,
+    pub failed: bool, // if one character was wrong in the prompt, it is counted as failed
 }
 
 impl Prompt {
@@ -20,6 +21,7 @@ impl Prompt {
             count_correct_remove: 0,
             count_fault: 0,
             count_fault_remove: 0,
+            failed: false,
         }
     }
 
@@ -37,6 +39,7 @@ impl Prompt {
     /// This function should only be used after [Prompt::finish()] is called.
     pub fn set(&mut self, prompt: Vec<char>) {
         self.prompt = prompt;
+        self.failed = false;
     }
 
     /// Count the missing characters of a prompt
@@ -70,6 +73,7 @@ impl Prompt {
             self.count_correct += 1;
         } else {
             self.count_fault += 1;
+            self.failed = true;
         }
     }
 
